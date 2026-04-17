@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/style/app_style.dart';
-import 'experience/spaces/space_admin/shell/q_admin_shell.dart';
-import 'experience/spaces/space_value/views/view_engine_status.dart';
+import 'experience/spaces/space_admin/shell_admin/qspace_admin_shell.dart';
 
 void main() {
   // Root entry point for the app.

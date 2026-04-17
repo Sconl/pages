@@ -27,9 +27,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
 import '../../../../core/admin/dev_screen_settings.dart';
-import '../screens/screen_admin_overview.dart';
-import '../screens/screen_admin_brand.dart';
-import '../screens/screen_admin_features.dart';
+import '../screen_admin/screen_admin_overview.dart';
+import '../screen_admin/screen_admin_brand.dart';
+import '../screen_admin/screen_admin_features.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK

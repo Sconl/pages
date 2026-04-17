@@ -20,7 +20,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
 import '../../../../core/admin/dev_screen_settings.dart';
-import '../../space_dev/screen_roadmap/screen_roadmap_home.dart';
+import '../../space_dev/shell_dev/space_dev_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK
