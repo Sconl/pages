@@ -1,34 +1,48 @@
+// main.dart
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGELOG
+// ─────────────────────────────────────────────────────────────────────────────
+//   v1.0.0 — Replaced static QPagesApp shell with proper AppRoot entry point.
+//             ProviderScope, auth adapter injection, and GoRouter now live in
+//             lib/interface/ — main.dart is deliberately minimal.
+//   v1.1.0 — Added WidgetsFlutterBinding.ensureInitialized() for async setup.
+//             Added Firebase init stub (no-op unless Firebase adapter is active).
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// main.dart does three things and nothing else:
+//   1. Ensure Flutter binding is initialized (required before any async work)
+//   2. Run any adapter-specific setup (Firebase init if using Firebase adapter)
+//   3. Hand off to AppRoot
+//
+// Everything else — ProviderScope, BrandScope, GoRouter — lives in lib/interface/.
+
 import 'package:flutter/material.dart';
 
-import 'core/style/app_style.dart';
-import 'experience/spaces/space_admin/shell_admin/qspace_admin_shell.dart';
+import 'client/qspace/client_config.dart';
+import 'interface/app_root.dart';
 
-void main() {
-  // Root entry point for the app.
-  runApp(const QPagesApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Adapter-specific startup. Each adapter initializes only what it needs.
+  await _initAdapter();
+
+  runApp(const AppRoot());
 }
 
-class QPagesApp extends StatelessWidget {
-  const QPagesApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BrandScope(
-      // Central brand configuration for app-wide colors, typography, and copy.
-      config: kBrandDefault,
-      child: MaterialApp(
-        // Uses branded app name instead of a hardcoded title.
-        title: BrandCopy.appName,
-
-        // Keep the app clean and production-ready.
-        debugShowCheckedModeBanner: false,
-
-        // Use your shared dark theme system.
-        theme: AppTheme.dark,
-
-        // Default landing shell for the admin space.
-        home: const QAdminShell(),
-      ),
-    );
+// Runs any one-time setup required by the active auth adapter.
+// Add cases here as new adapters are added.
+Future<void> _initAdapter() async {
+  switch (kAuthAdapterType) {
+    case AuthAdapterType.firebase:
+      // Uncomment when Firebase adapter is active:
+      // await Firebase.initializeApp(
+      //   options: DefaultFirebaseOptions.currentPlatform,
+      // );
+      break;
+    case AuthAdapterType.restJwt:
+      // No init needed — RestJwtAuthProvider sets up Dio lazily.
+      break;
   }
 }

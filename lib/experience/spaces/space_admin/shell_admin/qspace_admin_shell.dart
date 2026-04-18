@@ -1,4 +1,4 @@
-// lib/experience/spaces/space_admin/shell/q_admin_shell.dart
+// lib/experience/spaces/space_admin/shell_admin/qspace_admin_shell.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
@@ -8,21 +8,9 @@
 //     Adaptive layout: persistent sidebar ≥ 768px, Drawer on mobile.
 //     IndexedStack keeps admin screens alive between nav switches.
 //     Content/Assets/Preview are locked stubs until Cycle 3.
+//   • v1.0.1 — Fixed: QAdminShell correctly declared as StatefulWidget.
+//              Removed orphaned StatelessWidget stub that broke _QAdminShellState.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// WHAT THIS FILE OWNS:
-//   • DevScreenSettings instance (created + disposed here)
-//   • Admin navigation state (_selectedIndex)
-//   • Adaptive sidebar / drawer layout
-//
-// WHAT IT DOES NOT OWN:
-//   • Any screen content — that lives in the screens/ folder
-//   • Any business logic — this is pure navigation/layout shell
-//
-// TO USE: Set QAdminShell() as the home: in MaterialApp(theme: AppTheme.dark)
-//
-// Canon rule: QAdminShell must never share a navigation shell with the
-// public QPagesApp (space_value, space_system, space_auxiliary).
 
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
@@ -35,22 +23,21 @@ import '../screen_admin/screen_admin_features.dart';
 // CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Layout ────────────────────────────────────────────────────────────────────
+// ── Layout ──
 const double _kSidebarWidth      = 240.0;
-const double _kSidebarHeaderH    = 72.0;   // logo + "Admin" label area
+const double _kSidebarHeaderH    = 72.0;
 const double _kNavItemHeight     = 44.0;
 const double _kNavItemHorizPad   = 16.0;
 const double _kNavItemBorderR    = 8.0;
 const double _kNavIconSize       = 18.0;
-const double _kBreakpointSidebar = 768.0;  // below this → drawer mode
+const double _kBreakpointSidebar = 768.0;
 
-// ── Copy ──────────────────────────────────────────────────────────────────────
+// ── Copy ──
 const String _kAdminLabel   = 'Admin Panel';
 const String _kVersionLabel = 'QSpace Pages v2.0.0';
 const String _kLockedSuffix = ' — Cycle 3';
 
-// ── Nav item definitions — (icon, label, locked) ──────────────────────────────
-// locked=true → shows a lock icon + coming-soon stub instead of the real screen
+// ── Nav item definitions ──
 const _kNavItems = [
   (icon: Icons.space_dashboard_outlined, label: 'Overview',  locked: false),
   (icon: Icons.palette_outlined,         label: 'Brand',     locked: false),
@@ -61,25 +48,21 @@ const _kNavItems = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// END CONFIG BLOCK
-// ─────────────────────────────────────────────────────────────────────────────
-
-
-// ─────────────────────────────────────────────────────────────────────────────
 // QAdminShell
 // ─────────────────────────────────────────────────────────────────────────────
 
 class QAdminShell extends StatefulWidget {
-  const QAdminShell({super.key});
+  /// [body] is provided by GoRouter's ShellRoute. When QAdminShell is used
+  /// standalone (outside GoRouter), pass the desired child widget directly.
+  final Widget body;
+
+  const QAdminShell({super.key, required this.body});
 
   @override
   State<QAdminShell> createState() => _QAdminShellState();
 }
 
 class _QAdminShellState extends State<QAdminShell> {
-  // The settings instance lives here — it's the single source of truth for
-  // everything space_admin writes and space_dev reads. Wrapped in
-  // DevScreenSettingsScope below so the entire shell subtree can access it.
   final _devSettings = DevScreenSettings();
 
   int _selectedIndex = 0;
@@ -91,9 +74,6 @@ class _QAdminShellState extends State<QAdminShell> {
     super.dispose();
   }
 
-  // Screens in order matching _kNavItems. Locked screens show a stub.
-  // Using a getter so screens rebuild with the current index — IndexedStack
-  // in build() keeps them alive, this just defines the order.
   List<Widget> get _screens => [
     const ScreenAdminOverview(),
     const ScreenAdminBrand(),
@@ -104,10 +84,8 @@ class _QAdminShellState extends State<QAdminShell> {
   ];
 
   void _selectIndex(int i) {
-    // Locked screens can't be navigated to
     if (_kNavItems[i].locked) return;
     setState(() => _selectedIndex = i);
-    // Close drawer on mobile after selection
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       Navigator.pop(context);
     }
@@ -115,9 +93,6 @@ class _QAdminShellState extends State<QAdminShell> {
 
   @override
   Widget build(BuildContext context) {
-    // DevScreenSettingsScope at the very top so all admin screens AND
-    // any Navigator.push'd dev screens (re-wrapped with the same instance)
-    // can read settings without prop drilling.
     return DevScreenSettingsScope(
       settings: _devSettings,
       child: LayoutBuilder(
@@ -131,8 +106,6 @@ class _QAdminShellState extends State<QAdminShell> {
     );
   }
 
-  // ── Desktop: persistent sidebar + content area ────────────────────────────
-
   Widget _buildDesktopLayout(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -142,11 +115,7 @@ class _QAdminShellState extends State<QAdminShell> {
             selectedIndex: _selectedIndex,
             onSelect: _selectIndex,
           ),
-          // Hairline separator matching the system border style
-          VerticalDivider(
-            width: 1, thickness: 1, color: AppColors.border,
-          ),
-          // Content area fills the rest — IndexedStack keeps screens alive
+          VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,
@@ -157,8 +126,6 @@ class _QAdminShellState extends State<QAdminShell> {
       ),
     );
   }
-
-  // ── Mobile: AppBar + Drawer ───────────────────────────────────────────────
 
   Widget _buildMobileLayout(BuildContext context) {
     final currentLabel = _kNavItems[_selectedIndex].label;
@@ -193,9 +160,8 @@ class _QAdminShellState extends State<QAdminShell> {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// _AdminSidebar — the nav column (used in both desktop and drawer)
+// _AdminSidebar
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminSidebar extends StatelessWidget {
@@ -218,7 +184,6 @@ class _AdminSidebar extends StatelessWidget {
           _SidebarHeader(),
           Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 8),
-          // Nav items
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -226,11 +191,11 @@ class _AdminSidebar extends StatelessWidget {
               itemBuilder: (context, i) {
                 final item = _kNavItems[i];
                 return _AdminNavItem(
-                  icon: item.icon,
-                  label: item.label,
+                  icon:       item.icon,
+                  label:      item.label,
                   isSelected: selectedIndex == i && !item.locked,
-                  isLocked: item.locked,
-                  onTap: () => onSelect(i),
+                  isLocked:   item.locked,
+                  onTap:      () => onSelect(i),
                 );
               },
             ),
@@ -243,9 +208,8 @@ class _AdminSidebar extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// _SidebarHeader — logo + admin label
+// _SidebarHeader
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SidebarHeader extends StatelessWidget {
@@ -257,7 +221,6 @@ class _SidebarHeader extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: _kNavItemHorizPad),
         child: Row(
           children: [
-            // Brand icon — falls back gracefully to typographic wordmark
             BrandLogoEngine.iconWhite(width: 24, height: 24),
             const SizedBox(width: 10),
             Column(
@@ -267,16 +230,16 @@ class _SidebarHeader extends StatelessWidget {
                 Text(
                   BrandCopy.appName,
                   style: AppTypography.h5.copyWith(
-                    color: AppColors.textPrimary,
+                    color:      AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize:   13,
                   ),
                 ),
                 Text(
                   _kAdminLabel,
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 10,
+                    color:         AppColors.primary,
+                    fontSize:      10,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -289,9 +252,8 @@ class _SidebarHeader extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// _SidebarFooter — version info + back-to-app hint
+// _SidebarFooter
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SidebarFooter extends StatelessWidget {
@@ -307,7 +269,7 @@ class _SidebarFooter extends StatelessWidget {
           Text(
             'Control Plane · Canon v2.0.0',
             style: AppTypography.caption.copyWith(
-              color: AppColors.textMuted,
+              color:    AppColors.textMuted,
               fontSize: 9,
             ),
           ),
@@ -317,9 +279,8 @@ class _SidebarFooter extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// _AdminNavItem — single sidebar nav row
+// _AdminNavItem
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminNavItem extends StatelessWidget {
@@ -369,8 +330,8 @@ class _AdminNavItem extends StatelessWidget {
               child: Text(
                 label,
                 style: AppTypography.body.copyWith(
-                  color: itemColor,
-                  fontSize: 13,
+                  color:      itemColor,
+                  fontSize:   13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -384,9 +345,8 @@ class _AdminNavItem extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// _LockedScreen — placeholder for screens not yet implemented
+// _LockedScreen
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LockedScreen extends StatelessWidget {
@@ -402,8 +362,8 @@ class _LockedScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
+              color:  AppColors.surface,
+              shape:  BoxShape.circle,
               border: Border.all(color: AppColors.border),
             ),
             child: Icon(Icons.lock_outline, color: AppColors.textMuted, size: 28),
@@ -411,10 +371,7 @@ class _LockedScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Text(label, style: AppTypography.h4),
           const SizedBox(height: 8),
-          Text(
-            'Available$_kLockedSuffix',
-            style: AppTypography.bodySmall,
-          ),
+          Text('Available$_kLockedSuffix', style: AppTypography.bodySmall),
         ],
       ),
     );
