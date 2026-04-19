@@ -1,13 +1,17 @@
-// lib/spaces/space_auth/state/auth_riverpod.dart
+// lib/spaces/space_auth/auth_state/auth_riverpod.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial.
+//   v1.0.0 — Initial. All Riverpod providers for auth.
 //   v1.1.0 — Added authConfigProvider and selectedUserClassProvider.
-//   v1.1.1 — Fixed: import paths updated after folder restructure.
-//             experience/spaces → spaces; infrastructure → core/auth.
+//   v1.1.1 — Import paths updated after folder restructure.
+//   v2.0.0 — Moved from state/ → auth_state/ per layered architecture.
+//             Import paths updated accordingly.
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// What lives here: behavior wiring — providers, session stream, access.
+// What does NOT live here: UI widgets, layout logic, screen composition.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +25,8 @@ export '../../../core/auth/auth_config.dart';
 
 // ── authAdapterProvider ──────────────────────────────────────────────────────
 
+// MUST be overridden in ProviderScope (see lib/interface/app_root.dart).
+// Throws loudly if the override is missing — better than a silent wrong adapter.
 final authAdapterProvider = Provider<AuthProvider>((ref) {
   throw UnimplementedError(
     'authAdapterProvider must be overridden in ProviderScope.\n'
@@ -30,6 +36,8 @@ final authAdapterProvider = Provider<AuthProvider>((ref) {
 
 // ── authConfigProvider ───────────────────────────────────────────────────────
 
+// Override in ProviderScope to customize auth behavior for a tenant.
+// Defaults to the standard two-tier user/admin config.
 final authConfigProvider = Provider<QAuthConfig>(
   (ref) => kAuthConfigDefault,
 );
@@ -42,12 +50,14 @@ final authSessionProvider = StreamProvider<QAuthSession?>((ref) {
 
 // ── currentSessionProvider ───────────────────────────────────────────────────
 
+// Synchronous accessor. Use inside screens already behind the GoRouter guard.
 final currentSessionProvider = Provider<QAuthSession?>((ref) {
   return ref.watch(authSessionProvider).valueOrNull;
 });
 
 // ── selectedUserClassProvider ────────────────────────────────────────────────
 
-// Written by the screen right before signIn/signUp. Read by the router redirect
-// to determine where to route the user post-auth. Null = use AuthPolicy default.
+// Written by ShellAuthRoot right before signIn/signUp.
+// Read once by the GoRouter redirect to determine post-login destination.
+// Null means no explicit selection — router falls back to AuthPolicy.defaultHomeFor().
 final selectedUserClassProvider = StateProvider<String?>((ref) => null);

@@ -17,7 +17,7 @@ import '../core/auth/auth_config.dart';
 import '../core/router/router_config.dart';
 import '../core/auth/auth_adapters/firebase_auth_provider.dart';
 import '../core/auth/auth_adapters/rest_jwt_auth_provider.dart';
-import '../spaces/space_auth/state/auth_riverpod.dart';
+import '../spaces/space_auth/auth_state/auth_riverpod.dart';
 import 'qpages_app.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

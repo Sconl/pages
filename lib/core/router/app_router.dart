@@ -5,13 +5,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. Moved from lib/interface/.
 //   v1.1.0 — Role-aware post-login routing. QRouterConfig injection.
-//             AppPageTransitions applied to all route builders.
-//   v1.1.1 — Fixed: missing app_style.dart import. (_, __) → (_, _) lint.
-//             Import paths updated.
-//   v1.1.2 — Fixed: QAdminShell(body: child) → const QAdminShell().
-//             QAdminShell manages its own screen stack via kAdminScreenRegistry
-//             and IndexedStack — it does not accept an external body widget.
-//             GoRouter's ShellRoute child is intentionally unused here.
+//   v1.1.1 — Fixed imports and lint errors.
+//   v1.1.2 — Fixed QAdminShell body param.
+//   v1.2.0 — Updated to use ShellAuthRoot(mode: AuthMode.*) instead of
+//             individual screen_*.dart files. All three auth routes now
+//             resolve to the same ShellAuthRoot orchestrator with different
+//             AuthMode values. Auth screen imports consolidated.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -20,10 +19,9 @@ import 'package:go_router/go_router.dart';
 
 import '../style/app_style.dart';
 import '../auth/auth_policy.dart';
-import '../../spaces/space_auth/screens/screen_login.dart';
-import '../../spaces/space_auth/screens/screen_signup.dart';
-import '../../spaces/space_auth/screens/screen_reset.dart';
-import '../../spaces/space_auth/state/auth_riverpod.dart';
+import '../../spaces/space_auth/auth_views/shell_auth_root.dart';
+import '../../spaces/space_auth/auth_views/layout_auth_config.dart';
+import '../../spaces/space_auth/auth_state/auth_riverpod.dart';
 import '../../spaces/space_admin/shell_admin/q_admin_shell.dart';
 import 'router_config.dart';
 
@@ -52,30 +50,41 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect:          (context, state) => _redirect(ref, routerConfig, state),
     routes: [
       // ── Auth routes (unauthenticated only) ──────────────────────────────
+      // All three auth flows resolve to ShellAuthRoot with the appropriate mode.
+      // ShellAuthRoot reads QAuthConfig + AuthLayoutConfig and orchestrates
+      // the correct template + sections for each mode.
       GoRoute(
         path:        kRouteLogin,
-        pageBuilder: (ctx, state) => AppPageTransitions.fade(ctx, state, const ScreenLogin()),
+        pageBuilder: (ctx, state) => AppPageTransitions.fade(
+          ctx, state,
+          const ShellAuthRoot(mode: AuthMode.login),
+        ),
       ),
       GoRoute(
         path:        kRouteSignup,
-        pageBuilder: (ctx, state) => AppPageTransitions.fade(ctx, state, const ScreenSignup()),
+        pageBuilder: (ctx, state) => AppPageTransitions.fade(
+          ctx, state,
+          const ShellAuthRoot(mode: AuthMode.signup),
+        ),
       ),
       GoRoute(
         path:        kRouteResetPassword,
-        pageBuilder: (ctx, state) => AppPageTransitions.fade(ctx, state, const ScreenReset()),
+        pageBuilder: (ctx, state) => AppPageTransitions.fade(
+          ctx, state,
+          const ShellAuthRoot(mode: AuthMode.reset),
+        ),
       ),
 
       // ── Public rendering plane ───────────────────────────────────────────
       GoRoute(
         path:        kRouteHome,
-        pageBuilder: (ctx, state) => AppPageTransitions.fadeSlide(ctx, state, const _PlaceholderHome()),
+        pageBuilder: (ctx, state) => AppPageTransitions.fadeSlide(
+          ctx, state,
+          const _PlaceholderHome(),
+        ),
       ),
 
       // ── Admin control plane ──────────────────────────────────────────────
-      // QAdminShell owns its own IndexedStack via kAdminScreenRegistry.
-      // GoRouter's child is unused — the shell handles internal navigation itself.
-      // The ShellRoute still provides the auth guard boundary and the separate
-      // navigator key, which is what matters here.
       ShellRoute(
         navigatorKey: _kAdminNavKey,
         builder:      (_, _, _) => const QAdminShell(),
@@ -86,27 +95,45 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path:        kRouteAdminOverview,
-            pageBuilder: (ctx, state) => AppPageTransitions.fadeSlide(ctx, state, const _AdminPlaceholder(label: 'Overview')),
+            pageBuilder: (ctx, state) => AppPageTransitions.fadeSlide(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Overview'),
+            ),
           ),
           GoRoute(
             path:        '/admin/content',
-            pageBuilder: (ctx, state) => AppPageTransitions.slide(ctx, state, const _AdminPlaceholder(label: 'Content')),
+            pageBuilder: (ctx, state) => AppPageTransitions.slide(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Content'),
+            ),
           ),
           GoRoute(
             path:        '/admin/brand',
-            pageBuilder: (ctx, state) => AppPageTransitions.slide(ctx, state, const _AdminPlaceholder(label: 'Brand')),
+            pageBuilder: (ctx, state) => AppPageTransitions.slide(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Brand'),
+            ),
           ),
           GoRoute(
             path:        '/admin/assets',
-            pageBuilder: (ctx, state) => AppPageTransitions.slide(ctx, state, const _AdminPlaceholder(label: 'Assets')),
+            pageBuilder: (ctx, state) => AppPageTransitions.slide(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Assets'),
+            ),
           ),
           GoRoute(
             path:        '/admin/features',
-            pageBuilder: (ctx, state) => AppPageTransitions.slide(ctx, state, const _AdminPlaceholder(label: 'Features')),
+            pageBuilder: (ctx, state) => AppPageTransitions.slide(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Features'),
+            ),
           ),
           GoRoute(
             path:        '/admin/preview',
-            pageBuilder: (ctx, state) => AppPageTransitions.zoom(ctx, state, const _AdminPlaceholder(label: 'Preview')),
+            pageBuilder: (ctx, state) => AppPageTransitions.zoom(
+              ctx, state,
+              const _AdminPlaceholder(label: 'Preview'),
+            ),
           ),
         ],
       ),
@@ -115,7 +142,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
 
     errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text('Route not found: ${state.error}', style: const TextStyle(fontSize: 14))),
+      body: Center(
+        child: Text(
+          'Route not found: ${state.error}',
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
     ),
   );
 });
@@ -182,6 +214,9 @@ class _AdminPlaceholder extends StatelessWidget {
   const _AdminPlaceholder({required this.label});
   @override
   Widget build(BuildContext context) => Center(
-    child: Text('Admin / $label — coming Cycle 3', style: const TextStyle(fontSize: 16)),
+    child: Text(
+      'Admin / $label — coming Cycle 3',
+      style: const TextStyle(fontSize: 16),
+    ),
   );
 }
