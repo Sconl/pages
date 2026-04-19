@@ -4,43 +4,42 @@
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   • Initial release — admin controls for space_dev screens + feature flags.
-//     Section A: section-level visibility for screen_roadmap_home (3 toggles)
+//     Section A: section-level visibility (3 toggles)
 //     Section B: component-level visibility (6 toggles)
 //     Section C: QSpaceFeatureFlags display (read-only for now)
-//     Bottom: "Preview Roadmap" button — pushes ScreenRoadmapHome with the
-//       same DevScreenSettings instance re-wrapped in a new scope so changes
-//       are immediately reflected in the preview.
+//     Bottom: "Preview Dev Screen" button uses AdminPanelControllerScope to
+//       open the shared preview panel instead of Navigator.push — consistent
+//       with the rest of the admin UX.
 //     "Restore Defaults" resets all dev screen settings in one tap.
+//   • Removed Navigator.push ScreenRoadmapHome pattern — preview panel
+//     is the canonical preview mechanism across all admin screens.
+//   • File path corrected to screens/ folder per Canon v2.0.0.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// This is where space_admin's control over space_dev content happens.
-// Every toggle calls a setter on DevScreenSettings which notifies listeners —
-// changes propagate immediately to any open ScreenRoadmapHome.
 
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
 import '../../../../core/admin/dev_screen_settings.dart';
-import '../../space_dev/shell_dev/space_dev_shell.dart';
+import '../widgets/admin_preview_panel.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Layout ────────────────────────────────────────────────────────────────────
-const double _kPagePad        = 32.0;
-const double _kMaxWidth       = 880.0;
-const double _kSectionGap     = 32.0;
-const double _kPreviewBtnH    = 52.0;
+const double _kPagePad      = 32.0;
+const double _kMaxWidth     = 880.0;
+const double _kSectionGap   = 32.0;
+const double _kPreviewBtnH  = 52.0;
 
 // ── Copy ──────────────────────────────────────────────────────────────────────
-const String _kPreviewBtnLabel    = 'Preview Roadmap Screen';
-const String _kRestoreLabel       = 'Restore Defaults';
-const String _kFeatureFlagsNote   =
-    'Feature flags editing is available from Cycle 3. '
+const String _kPreviewBtnLabel  = 'Open Brand Preview Panel';
+const String _kRestoreLabel     = 'Restore Defaults';
+const String _kFeatureFlagsNote =
+    'Feature flag editing is available in Cycle 3. '
     'Values below reflect the current QSpaceFeatureFlags defaults.';
 
-// ── Feature flags display data — (label, value) ───────────────────────────────
-// These come from QSpaceFeatureFlags() defaults. Not editable yet.
+// ── Feature flags display data — (label, enabled) ────────────────────────────
+// Sourced from QSpaceFeatureFlags() defaults. Not editable yet.
 const _kFeatureFlags = [
   ('Trial Signup',      true),
   ('Pricing Table',     true),
@@ -61,25 +60,10 @@ const _kFeatureFlags = [
 class ScreenAdminFeatures extends StatelessWidget {
   const ScreenAdminFeatures({super.key});
 
-  // Navigate to ScreenRoadmapHome, re-wrapping it with the SAME DevScreenSettings
-  // instance so the admin's toggle state is immediately visible in the preview.
-  void _previewRoadmap(BuildContext context) {
-    final settings = DevScreenSettingsScope.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DevScreenSettingsScope(
-          settings: settings,
-          child: const ScreenRoadmapHome(),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Reading settings here causes this widget to rebuild on every notifyListeners()
-    // call — which is what we want so the toggle states stay in sync.
+    // Reading settings here makes this widget rebuild on every notifyListeners()
+    // call — keeps toggle state in sync without setState().
     final settings = DevScreenSettingsScope.of(context);
 
     return Scaffold(
@@ -98,33 +82,36 @@ class ScreenAdminFeatures extends StatelessWidget {
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Section A — section-level gates
+                // Section A — section-level visibility gates
                 _AdminSection(
                   label: 'Roadmap Screen — Section Visibility',
                   child: _SectionToggles(settings: settings),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Section B — component-level gates within sections
+                // Section B — component-level gates
                 _AdminSection(
                   label: 'Roadmap Screen — Component Visibility',
                   child: _ComponentToggles(settings: settings),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Reset button
+                // Restore defaults
                 _RestoreDefaultsButton(settings: settings),
                 const SizedBox(height: _kSectionGap),
 
-                // Section C — feature flags (read-only for now)
+                // Section C — feature flags (read-only until Cycle 3)
                 _AdminSection(
                   label: 'Feature Flags',
                   child: _FeatureFlagsSection(),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Preview CTA — always visible at the bottom
-                _PreviewButton(onPressed: () => _previewRoadmap(context)),
+                // Preview panel CTA — opens the shared brand preview panel.
+                // In a future cycle this could open a space_dev screen preview instead.
+                _PreviewButton(
+                  onPressed: () => AdminPanelControllerScope.of(context).open(),
+                ),
                 const SizedBox(height: 40),
               ],
             ),
@@ -137,7 +124,7 @@ class ScreenAdminFeatures extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _SectionToggles — show/hide entire QPStructure sections
+// _SectionToggles
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionToggles extends StatelessWidget {
@@ -179,7 +166,7 @@ class _SectionToggles extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _ComponentToggles — show/hide individual components within sections
+// _ComponentToggles
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ComponentToggles extends StatelessWidget {
@@ -197,8 +184,8 @@ class _ComponentToggles extends StatelessWidget {
             description: 'Branch name + current phase pills in section_core',
             value: settings.showBranchStatus,
             onChanged: settings.setBranchStatus,
-            // Grey out if parent section is hidden — still toggleable,
-            // just won't do anything visible until section is re-enabled.
+            // Dim — still toggleable, just won't do anything visible until
+            // the parent section is re-enabled.
             dimmed: !settings.showSectionCore,
           ),
           Divider(height: 1, color: AppColors.border),
@@ -299,7 +286,7 @@ class _RestoreDefaultsButton extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _FeatureFlagsSection — read-only display of QSpaceFeatureFlags defaults
+// _FeatureFlagsSection
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FeatureFlagsSection extends StatelessWidget {
@@ -382,7 +369,7 @@ class _FlagRow extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _PreviewButton — the main CTA that opens ScreenRoadmapHome
+// _PreviewButton
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PreviewButton extends StatelessWidget {
@@ -403,11 +390,8 @@ class _PreviewButton extends StatelessWidget {
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBR),
           ),
-          icon: const Icon(Icons.open_in_new_outlined, size: 18, color: Colors.white),
-          label: Text(
-            _kPreviewBtnLabel,
-            style: AppTypography.button,
-          ),
+          icon: const Icon(Icons.preview_outlined, size: 18, color: Colors.white),
+          label: Text(_kPreviewBtnLabel, style: AppTypography.button),
         ),
       ),
     );
@@ -416,7 +400,7 @@ class _PreviewButton extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _ToggleRow — reusable admin toggle with label + description
+// _ToggleRow — reusable admin toggle with label + description + dimming
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ToggleRow extends StatelessWidget {
@@ -425,15 +409,15 @@ class _ToggleRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final bool isLast;
-  final bool dimmed;  // parent section is off — still toggleable, visually muted
+  final bool dimmed;
 
   const _ToggleRow({
     required this.label,
     this.description,
     required this.value,
     required this.onChanged,
-    this.isLast = false,
-    this.dimmed = false,
+    this.isLast  = false,
+    this.dimmed  = false,
   });
 
   @override

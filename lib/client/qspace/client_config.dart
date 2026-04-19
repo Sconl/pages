@@ -3,56 +3,81 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial. Client-specific config for QSpace Pages deployment.
-//             This is the ONLY file that should change between deployments.
-//             Adapter selection, API URL, tenant ID — all here.
+//   v1.0.0 — Initial. kAuthAdapterType, kApiBaseUrl, kDefaultTenantId.
+//             Zero-touch adapter switching.
+//   v1.1.0 — Added kQSpaceAuthConfig and kQSpaceRouterConfig.
+//             These are the QSpace-specific overrides passed to AppRoot.
+//             All auth behavior and routing customization for the QSpace client
+//             lives here — no other file needs to change for client-specific tuning.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// HOW TO USE FOR A NEW TENANT:
-//   1. Duplicate this file or override these values per environment.
-//   2. Set kAuthAdapterType to the adapter matching your backend.
-//   3. Set kApiBaseUrl to your Rust backend URL (or Firebase project for Firebase adapter).
-//   4. Set kDefaultTenantId to the subdomain/tenant slug.
+// This is the ONLY file that changes between deployments.
+// To switch tenants or adapters: change values here. Touch nothing else.
 //
-// For production: these values should come from build-time --dart-define flags,
-// not hardcoded strings. See the comment on each constant.
+// To add a new client (e.g., Acme Corp):
+//   1. Create lib/client/acme/client_config.dart with the right constants.
+//   2. Create main_acme.dart that passes acme's configs to AppRoot.
+//   3. Done. Zero changes to any core file.
+
+import '../../core/auth/auth_config.dart';
+import '../../core/router/router_config.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIG BLOCK
+// Adapter selection
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Which auth adapter to wire at startup.
-// Change this to AuthAdapterType.firebase to use FirebaseAuthProvider instead.
-// Everything else in the app is unaffected by this switch.
+enum AuthAdapterType { restJwt, firebase }
+
+// Change this line to switch adapters. That's it.
 const kAuthAdapterType = AuthAdapterType.restJwt;
 
-// ── API ──
-// Production: pass via --dart-define=API_BASE_URL=https://api.qspace.co
-// Dev: point at your local Rust backend.
+// ─────────────────────────────────────────────────────────────────────────────
+// API / Tenant
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Override at build time: --dart-define=API_BASE_URL=https://api.qspace.co
 const kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://localhost:3000', // local Rust backend
+  defaultValue: 'http://localhost:3000',
 );
 
-// ── Tenancy ──
-// The tenant slug for this deployment. In SaaS production this is resolved
-// from the subdomain at runtime via SubdomainTenancyProvider. For local
-// development and single-tenant builds, this constant is used directly.
+// Override at build time: --dart-define=TENANT_ID=acme-prod
 const kDefaultTenantId = String.fromEnvironment(
   'TENANT_ID',
-  defaultValue: 'qspace-dev', // local dev tenant
+  defaultValue: 'qspace-dev',
 );
 
-// ── Firebase (only needed when kAuthAdapterType == AuthAdapterType.firebase) ──
-// If you're using the Firebase adapter, initialise Firebase in main.dart with
-// your project's GoogleService-Info.plist / google-services.json.
-// The FirebaseAuthProvider reads these at runtime — no constants needed here.
-
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthAdapterType
+// Auth config (QSpace client)
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum AuthAdapterType {
-  restJwt,  // Rust backend — JWT issued by /api/auth/login
-  firebase, // Firebase Auth + Firestore user document
-}
+// QSpace shows a User / Administrator toggle.
+// Admins land on /admin after login. Users land on /.
+// Flip to kAuthConfigSingleUser for a B2C product with no admin access.
+// Flip to kAuthConfigDeveloper for internal tooling during dev.
+const kQSpaceAuthConfig = QAuthConfig(
+  tenantId: kDefaultTenantId,
+  userClasses: [
+    AuthUserClass(id: 'user',  label: 'User',          role: QRole.user),
+    AuthUserClass(id: 'admin', label: 'Administrator',  role: QRole.clientAdmin),
+  ],
+  loginHeading:    'Welcome back',
+  loginSubheading: 'Sign in to your QSpace account',
+  signupHeading:   'Get started',
+  signupSubheading: 'Create your QSpace account',
+  postLoginRoutes: {
+    'user':  '/',
+    'admin': '/admin',
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Router config (QSpace client)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Add client-specific routes here (e.g., /onboarding, /checkout) without
+// touching lib/core/router/app_router.dart.
+const kQSpaceRouterConfig = QRouterConfig(
+  initialLocation: '/',
+  // extraRoutes: [GoRoute(path: '/onboarding', builder: ...)],
+);

@@ -25,7 +25,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/auth/auth_session.dart';
+import '../auth_session.dart';
 import '../auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

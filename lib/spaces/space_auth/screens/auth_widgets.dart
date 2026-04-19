@@ -4,35 +4,38 @@
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. Shared auth-space UI components.
-//             QAuthField, QAuthButton, QAuthDivider.
-//             Uses lib/core/style/ tokens exclusively — no hardcoded values.
-//             Adapted from WellPath auth_widgets.dart v1.1.0.
-//             Renamed to Q-prefix per QSpace component convention.
+//             QAuthField, QAuthButton, QAuthDivider, QAuthErrorBanner.
+//   v1.1.0 — Added QRoleToggle + _TogglePill.
+//             Role toggle is a segmented pill selector that maps user-class
+//             labels to QRole values for post-login routing and signup hints.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // These widgets are internal to space_auth. When lib/interface/components/
 // q_text_field.dart and q_button.dart are built (Cycle 1), migrate to those
-// and delete this file. For now, auth needs to work without waiting on
-// the full component library.
+// and delete the field/button widgets from this file. Keep QRoleToggle here.
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/style/app_style.dart';
+import '../../../core/style/app_style.dart';
+import '../../../core/auth/auth_config.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Layout ──
-const _kButtonHeight   = 50.0;
-const _kIconSize       = 20.0;
-const _kSpinnerSize    = 22.0;
-const _kSpinnerWidth   = 2.5;
-const _kDividerThick   = 1.0;
-const _kBorderWidth    = 1.5; // focused border width
+const _kButtonHeight     = 50.0;
+const _kIconSize         = 20.0;
+const _kSpinnerSize      = 22.0;
+const _kSpinnerWidth     = 2.5;
+const _kDividerThick     = 1.0;
+const _kBorderWidth      = 1.5;
+const _kToggleInnerPad   = 3.0;   // padding inside the toggle container
+const _kTogglePillVPad   = 11.0;  // vertical padding inside each pill
+const _kToggleFontSize   = 13.0;
 
 // ── Error banner ──
-const _kErrorIconSize  = 16.0;
+const _kErrorIconSize    = 16.0;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QAuthField
@@ -217,7 +220,6 @@ class QAuthDivider extends StatelessWidget {
 // QAuthErrorBanner
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Pulled out of each screen to avoid duplicating the banner markup everywhere.
 class QAuthErrorBanner extends StatelessWidget {
   final String message;
   const QAuthErrorBanner({super.key, required this.message});
@@ -245,6 +247,84 @@ class QAuthErrorBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QRoleToggle
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Segmented pill selector for choosing a user class at login/signup.
+// Only rendered when QAuthConfig.isToggleVisible is true.
+// The selected class id gets written to selectedUserClassProvider at submit time.
+class QRoleToggle extends StatelessWidget {
+  final List<AuthUserClass> userClasses;
+  final AuthUserClass       selected;
+  final ValueChanged<AuthUserClass> onSelected;
+
+  const QRoleToggle({
+    super.key,
+    required this.userClasses,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(_kToggleInnerPad),
+      decoration: BoxDecoration(
+        color:        AppColors.surface,
+        borderRadius: AppRadius.pillBR,
+        border:       Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: userClasses.map((uc) => Expanded(
+          child: _TogglePill(
+            userClass:  uc,
+            isSelected: uc.id == selected.id,
+            onTap:      () => onSelected(uc),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+}
+
+class _TogglePill extends StatelessWidget {
+  final AuthUserClass userClass;
+  final bool          isSelected;
+  final VoidCallback  onTap;
+
+  const _TogglePill({
+    required this.userClass,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration:  AppDurations.fast,
+        padding:   const EdgeInsets.symmetric(vertical: _kTogglePillVPad),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          gradient:     isSelected ? AppGradients.button : null,
+          borderRadius: AppRadius.pillBR,
+          boxShadow:    isSelected ? AppShadows.buttonGlow : null,
+        ),
+        child: Text(
+          userClass.label,
+          style: AppTypography.helper.copyWith(
+            fontSize:   _kToggleFontSize,
+            fontWeight: FontWeight.w600,
+            color:      isSelected ? AppColors.onPrimary : AppColors.textMuted,
+          ),
+        ),
       ),
     );
   }

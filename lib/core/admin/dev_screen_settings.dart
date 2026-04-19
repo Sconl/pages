@@ -43,7 +43,6 @@ const bool _kDefaultShowBranchStatus   = true;  // branch + phase pills
 // DevScreenSettings — the writable state model
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Represents every admin-controllable aspect of space_dev screens.
 // Two tiers of control:
 //   • Section-level — show/hide entire QPStructure sections (core/context/connect)
 //   • Component-level — show/hide specific widgets within a visible section
@@ -66,7 +65,7 @@ class DevScreenSettings extends ChangeNotifier {
   bool _showArchLayers   = _kDefaultShowArchLayers;
   bool _showBranchStatus = _kDefaultShowBranchStatus;
 
-  // ── Getters ──────────────────────────────────────────────────────────────
+  // ── Getters ───────────────────────────────────────────────────────────────
 
   bool get showSectionCore    => _showSectionCore;
   bool get showSectionContext => _showSectionContext;
@@ -91,7 +90,6 @@ class DevScreenSettings extends ChangeNotifier {
   void setBranchStatus(bool v)   { _showBranchStatus   = v; notifyListeners(); }
 
   /// Wipe every override back to the defaults declared in the config block.
-  /// Exposed so the features screen can offer a "Restore Defaults" action.
   void resetToDefaults() {
     _showSectionCore    = _kDefaultShowSectionCore;
     _showSectionContext = _kDefaultShowSectionContext;
@@ -114,18 +112,7 @@ class DevScreenSettings extends ChangeNotifier {
 // InheritedNotifier wires the ChangeNotifier to Flutter's element rebuild
 // system automatically — no manual setState() needed. Any widget that calls
 // DevScreenSettingsScope.of(context) will rebuild whenever notifyListeners()
-// fires, but only within the subtree below this scope.
-//
-// USAGE:
-//   // At the top of QAdminShell's build:
-//   DevScreenSettingsScope(
-//     settings: _devSettings,
-//     child: yourWidget,
-//   )
-//
-//   // Reading in any descendant:
-//   final s = DevScreenSettingsScope.of(context);
-//   if (s.showCountdown) const _CountdownBadge()
+// fires, within the subtree below this scope.
 
 class DevScreenSettingsScope extends InheritedNotifier<DevScreenSettings> {
   const DevScreenSettingsScope({
@@ -135,17 +122,13 @@ class DevScreenSettingsScope extends InheritedNotifier<DevScreenSettings> {
   }) : super(notifier: settings);
 
   /// Never returns null — asserts in debug builds if the scope is missing.
-  /// This should only be called from widgets that are guaranteed to live
-  /// below a DevScreenSettingsScope in the tree (space_dev screens and
-  /// the space_admin features screen).
   static DevScreenSettings of(BuildContext context) {
     final scope = context
         .dependOnInheritedWidgetOfExactType<DevScreenSettingsScope>();
     assert(
       scope != null,
       'DevScreenSettingsScope not found in widget tree. '
-      'Wrap your widget tree (typically at QAdminShell level) '
-      'with DevScreenSettingsScope.',
+      'Wrap your widget tree (at QAdminShell level) with DevScreenSettingsScope.',
     );
     return scope!.notifier!;
   }

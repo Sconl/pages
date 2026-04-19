@@ -4,21 +4,29 @@
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. ProviderScope + adapter injection.
-//             This is the only file that knows which concrete AuthProvider
-//             is in use. Everything else depends on authAdapterProvider.
+//   v1.1.0 — Added typed authConfig and routerConfig params with defaults.
+//             Each main_*.dart passes its own config. ProviderScope now also
+//             overrides authConfigProvider and routerConfigProvider.
+//             This is the ONLY file that knows which concrete adapter is in use.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Dependency injection lives here and nowhere else.
-// Adding a new adapter = change client_config.dart + update the switch below.
+//
+// Adding a new adapter: change client_config.dart + add a case to _buildAdapter().
 // No other file needs to change.
+//
+// Adding a new client/tenant: create a new main_*.dart that passes different
+// authConfig and routerConfig. No other file needs to change.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../client/qspace/client_config.dart';
-import '../experience/spaces/space_auth/state/auth_riverpod.dart';
-import '../infrastructure/adapters/firebase_auth_provider.dart';
-import '../infrastructure/adapters/rest_jwt_auth_provider.dart';
+import '../core/auth/auth_config.dart';
+import '../core/router/router_config.dart';
+import '../spaces/space_auth/state/auth_riverpod.dart';
+import '../core/auth/auth_adapters/firebase_auth_provider.dart';
+import '../core/auth/auth_adapters/rest_jwt_auth_provider.dart';
 import 'qpages_app.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,23 +34,34 @@ import 'qpages_app.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppRoot extends StatelessWidget {
-  const AppRoot({super.key});
+  final QAuthConfig   authConfig;
+  final QRouterConfig routerConfig;
+
+  const AppRoot({
+    super.key,
+    // Defaults to the QSpace config — other clients pass their own.
+    this.authConfig   = kQSpaceAuthConfig,
+    this.routerConfig = kQSpaceRouterConfig,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
       overrides: [
-        // Wire the correct adapter based on client_config.dart.
-        // This is the single seam where you swap providers.
+        // The concrete auth adapter. This is the single seam where adapters are swapped.
         authAdapterProvider.overrideWithValue(_buildAdapter()),
+        // Which user classes, copy, and feature flags to use for auth screens.
+        authConfigProvider.overrideWithValue(authConfig),
+        // Extra routes and redirect rules for this client.
+        routerConfigProvider.overrideWithValue(routerConfig),
       ],
       child: const QPagesApp(),
     );
   }
 
-  // Builds the concrete auth adapter from config.
-  // If kAuthAdapterType is wrong or unsupported, this throws immediately
-  // at startup — loud failure beats silent misbehavior.
+  // Builds the concrete auth adapter from kAuthAdapterType.
+  // Throws immediately at startup if the type is wrong — loud failure beats
+  // a silent misbehavior discovered hours later in a signIn() call.
   static _buildAdapter() {
     switch (kAuthAdapterType) {
       case AuthAdapterType.restJwt:

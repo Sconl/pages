@@ -5,6 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. Abstract auth contract. No framework. No provider mention.
 //             Follows Universal Architecture Directive § 5.
+//   v1.1.0 — Added optional roleHint to signUp() — the class the user selected
+//             at signup. Backend may or may not use it. Zero breaking change.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // This file defines what auth CAN do — nothing about HOW.
@@ -45,6 +47,10 @@ abstract class AuthPort {
     // tenantId is required here because sign-up in a multitenant system
     // needs to bind the new user to the right tenant from the first call.
     required String tenantId,
+    // roleHint is the AuthUserClass.id the user selected at signup.
+    // Pass it to the backend — the backend decides whether to honor it.
+    // Null if no role toggle was shown (single-user config).
+    String? roleHint,
   });
 
   Future<void> signOut();

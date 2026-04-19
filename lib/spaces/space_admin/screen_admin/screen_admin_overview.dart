@@ -7,13 +7,16 @@
 //     Shows phase, branch, KPI cards, admin plane diagram, and quick actions.
 //     No backend yet — all data is hardcoded from the current project canvas.
 //     Replace static values with provider calls once the API layer is live.
+//   • Updated quick actions to use AdminPanelControllerScope (open preview
+//     panel directly instead of showing a snackbar for Brand).
+//   • Updated architecture diagram to reflect Canon v2.2.0 (nested sub-spaces,
+//     space_auth, AdminBrandDraftScope, AdminPanelControllerScope).
+//   • File path corrected to screens/ folder per Canon v2.0.0.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// This screen is read-only. It never writes to the manifest or content store.
-// Its job is to surface the current state of the project at a glance.
 
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
+import '../widgets/admin_preview_panel.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK
@@ -26,23 +29,27 @@ const double _kKpiCardWidth = 180.0;
 const double _kKpiCardH     = 100.0;
 const double _kSectionGap   = 36.0;
 
-// ── Copy — project status snapshot ───────────────────────────────────────────
-// Update these as the project progresses. Full provider integration Cycle 3.
-const String _kCurrentPhase  = 'Pre-Cycle 0 · Week 7';
-const String _kActiveBranch  = 'feature/style-system → merge pending';
-const String _kLastCompleted = 'Style system + Canon v2.0.0 + all lint errors fixed';
-const String _kNextMilestone = 'Merge → QPScreen rename → merge engine → package skeleton';
+// ── Project status snapshot ───────────────────────────────────────────────────
+// TODO: wire these to a provider once the API layer is live (Cycle 3).
+// For now they're hardcoded to match the current canvas state.
+const String _kCurrentPhase  = 'Pre-Cycle 0 · Week 7 — Auth Flow Complete';
+const String _kActiveBranch  = 'feature/auth-flow → merge pending into main';
+const String _kLastCompleted =
+    'Auth flow (17 files, 2 adapters, 3 screens, GoRouter guards). '
+    'Canon v2.2.0 (Nested Sub-Spaces) locked.';
+const String _kNextMilestone =
+    'Merge auth + style → Canon migration (QPScreen rename) → merge engine → package skeleton';
 const String _kSuiteTarget   = 'Beacon: Brochure (Cycle 1)';
 const String _kMvpDate       = 'May 15, 2026';
 const String _kCurrentWeek   = 'Week 7 / 16';
 
-// ── KPI data — snapshot values ────────────────────────────────────────────────
+// ── KPI data ─────────────────────────────────────────────────────────────────
 // (label, current, target, color)
 const _kKpis = [
-  ('Customers',   '0',       '1–3 pilots',  Color(0xFF9933FF)),
-  ('MRR',         'KES 0',   'KES 10K',     Color(0xFF22D3EE)),
-  ('Templates',   '0',       '1',           Color(0xFF00E676)),
-  ('Admin Live',  'Cycle 3+','Cycle 3',     Color(0xFFFFB300)),
+  ('Customers',   '0',         '1–3 pilots', Color(0xFF9933FF)),
+  ('MRR',         'KES 0',     'KES 10K',    Color(0xFF22D3EE)),
+  ('Templates',   '0',         '1',          Color(0xFF00E676)),
+  ('Admin Live',  'Cycle 3+',  'Cycle 3',    Color(0xFFFFB300)),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,28 +78,24 @@ class ScreenAdminOverview extends StatelessWidget {
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Current status card
                 _AdminSection(
                   label: 'Current Status',
                   child: _StatusCard(),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // KPI row
                 _AdminSection(
                   label: 'Key Metrics',
                   child: _KpiRow(),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Two-plane architecture reminder
                 _AdminSection(
-                  label: 'Architecture',
+                  label: 'Architecture — Canon v2.2.0',
                   child: _ArchitectureDiagram(),
                 ),
                 const SizedBox(height: _kSectionGap),
 
-                // Quick navigation links to other admin screens
                 _AdminSection(
                   label: 'Quick Actions',
                   child: _QuickActions(),
@@ -109,7 +112,7 @@ class ScreenAdminOverview extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _StatusCard — current phase, branch, last done, next up
+// _StatusCard
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StatusCard extends StatelessWidget {
@@ -122,7 +125,6 @@ class _StatusCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Phase badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -140,12 +142,12 @@ class _StatusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _StatusRow(label: 'Active Branch',   value: _kActiveBranch),
-          _StatusRow(label: 'Last Completed',  value: _kLastCompleted),
-          _StatusRow(label: 'Next Milestone',  value: _kNextMilestone),
-          _StatusRow(label: 'MVP Target',      value: _kMvpDate),
-          _StatusRow(label: 'Sprint Progress', value: _kCurrentWeek),
-          _StatusRow(label: 'First Template',  value: _kSuiteTarget, isLast: true),
+          _StatusRow(label: 'Active Branch',    value: _kActiveBranch),
+          _StatusRow(label: 'Last Completed',   value: _kLastCompleted),
+          _StatusRow(label: 'Next Milestone',   value: _kNextMilestone),
+          _StatusRow(label: 'MVP Target',       value: _kMvpDate),
+          _StatusRow(label: 'Sprint Progress',  value: _kCurrentWeek),
+          _StatusRow(label: 'First Template',   value: _kSuiteTarget, isLast: true),
         ],
       ),
     );
@@ -201,7 +203,7 @@ class _StatusRow extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _KpiRow — 4 KPI cards in a horizontal wrap
+// _KpiRow
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _KpiRow extends StatelessWidget {
@@ -268,7 +270,7 @@ class _KpiCard extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _ArchitectureDiagram — simplified two-plane overview
+// _ArchitectureDiagram — updated for Canon v2.2.0 (auth layer visible)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ArchitectureDiagram extends StatelessWidget {
@@ -277,48 +279,81 @@ class _ArchitectureDiagram extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppDecorations.card,
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: _Plane(
-            title: 'Rendering Plane',
-            color: AppColors.primary,
-            items: const [
-              'space_value',
-              'space_system',
-              'space_auxiliary',
-              '↓',
-              'QPScreen → Sections → Blocks',
-              '↓',
-              'Rendered by BrandConfig + AppTheme',
-            ],
-          )),
-          const SizedBox(width: 20),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Auth layer banner across both planes
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withValues(alpha: 0.08),
+              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.25)),
+              borderRadius: AppRadius.smBR,
+            ),
+            child: Text(
+              'AUTH LAYER — space_auth (cross-cutting) '
+              '· AuthPort → QAuthSession → GoRouter guards',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.secondary,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Two planes side-by-side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-              Icon(Icons.sync_alt, color: AppColors.textMuted, size: 20),
-              const SizedBox(height: 4),
-              Text('edit', style: AppTypography.caption.copyWith(fontSize: 9)),
+              Expanded(child: _Plane(
+                title: 'Rendering Plane',
+                color: AppColors.primary,
+                items: const [
+                  'space_value',
+                  '  └ space_home (sub-space)',
+                  '  └ space_features',
+                  'space_system',
+                  '  └ space_account',
+                  'space_auxiliary',
+                  '↓',
+                  'QPScreen → Section → Block',
+                  '↓',
+                  'BrandConfig + AppTheme',
+                ],
+              )),
+              const SizedBox(width: 16),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 32),
+                  Icon(Icons.sync_alt, color: AppColors.textMuted, size: 20),
+                  const SizedBox(height: 4),
+                  Text('edit', style: AppTypography.caption.copyWith(fontSize: 9)),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(child: _Plane(
+                title: 'Control Plane',
+                color: const Color(0xFF22D3EE),
+                items: const [
+                  'space_admin ← HERE',
+                  '  overview / brand / content',
+                  '  assets / features / preview',
+                  '↓',
+                  'AdminBrandDraft',
+                  'AdminPanelController',
+                  'DevScreenSettings',
+                  '↓',
+                  'overlay.json → merge_engine',
+                  '↓ Re-renders public UX',
+                ],
+                highlight: true,
+              )),
             ],
           ),
-          const SizedBox(width: 20),
-          Expanded(child: _Plane(
-            title: 'Control Plane',
-            color: const Color(0xFF22D3EE),
-            items: const [
-              'space_admin ← HERE',
-              'screen_admin_overview',
-              'screen_admin_brand',
-              'screen_admin_features',
-              '↓',
-              'Writes overlay.json',
-              '↓ merge_engine ↓',
-              'Re-renders public UX',
-            ],
-            highlight: true,
-          )),
         ],
       ),
     );
@@ -350,12 +385,14 @@ class _Plane extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: AppTypography.caption.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              )),
+          Text(
+            title,
+            style: AppTypography.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 10),
           ...items.map((item) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 1),
@@ -378,7 +415,7 @@ class _Plane extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _QuickActions — shortcuts to the other admin screens
+// _QuickActions — now opens the preview panel directly for brand
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _QuickActions extends StatelessWidget {
@@ -390,28 +427,39 @@ class _QuickActions extends StatelessWidget {
       children: [
         _QuickAction(
           icon: Icons.palette_outlined,
-          label: 'View Brand Tokens',
-          // Nav to Brand tab — user switches manually since we use IndexedStack
-          onTap: () => _showInfo(context, 'Switch to the Brand tab in the sidebar.'),
+          label: 'Brand Preview',
+          onTap: () {
+            // Opens the preview panel directly from Overview.
+            AdminPanelControllerScope.of(context).open();
+          },
         ),
         _QuickAction(
           icon: Icons.tune_outlined,
           label: 'Edit Dev Screen',
-          onTap: () => _showInfo(context, 'Switch to the Features tab to control space_dev screens.'),
+          onTap: () => _showSnack(
+            context,
+            'Switch to the Features tab to control space_dev screens.',
+          ),
         ),
         _QuickAction(
           icon: Icons.open_in_new_outlined,
           label: 'GitHub Canvas',
-          onTap: () => _showInfo(context, 'Open the project canvas from your file system.'),
+          onTap: () => _showSnack(
+            context,
+            'Open the project canvas from your file system.',
+          ),
         ),
       ],
     );
   }
 
-  void _showInfo(BuildContext context, String message) {
+  void _showSnack(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary)),
+        content: Text(
+          message,
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary),
+        ),
         backgroundColor: AppColors.surfaceLit,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.cardBR),
@@ -459,13 +507,12 @@ class _QuickAction extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared layout helpers (private to this file)
+// Shared layout helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PageHeader extends StatelessWidget {
   final String title;
   final String subtitle;
-
   const _PageHeader({required this.title, required this.subtitle});
 
   @override
@@ -484,7 +531,6 @@ class _PageHeader extends StatelessWidget {
 class _AdminSection extends StatelessWidget {
   final String label;
   final Widget child;
-
   const _AdminSection({required this.label, required this.child});
 
   @override
@@ -492,10 +538,7 @@ class _AdminSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: AppTypography.overline,
-        ),
+        Text(label.toUpperCase(), style: AppTypography.overline),
         const SizedBox(height: 12),
         child,
       ],

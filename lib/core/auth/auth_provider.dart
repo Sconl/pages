@@ -9,10 +9,10 @@
 //             export chain — the direct import was redundant and noisy.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import '../core/auth/auth_port.dart';
+import 'auth_port.dart';
 
-export '../core/auth/auth_port.dart';
-export '../core/auth/auth_session.dart';
+export 'auth_port.dart';
+export 'auth_session.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthProvider

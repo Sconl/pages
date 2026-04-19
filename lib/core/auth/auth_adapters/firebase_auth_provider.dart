@@ -27,7 +27,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/foundation.dart';
 
-import '../../core/auth/auth_session.dart';
+import '../auth_session.dart';
 import '../auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
