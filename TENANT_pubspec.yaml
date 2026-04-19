@@ -1,0 +1,67 @@
+# pubspec.yaml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANGELOG
+# ─────────────────────────────────────────────────────────────────────────────
+#   • Initial scaffold — QSpace Pages v0.1.0, all core dependencies declared
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: qspace_pages
+description: QSpace Pages — multi-tenant site engine. Flutter-based canonical UI engine
+  with Canon→Suite→Client overlay architecture, runtime brand theming, and a
+  space_admin control plane for operator-managed content publishing.
+
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── State management ──
+  flutter_riverpod: ^2.5.1   # ConsumerWidget, FutureProvider, StateNotifier
+
+  # ── Routing ──
+  go_router: ^14.2.0         # /admin/* group with separate shell, typed routes
+
+  # ── HTTP ──
+  dio: ^5.4.3                # REST config, admin config, asset upload
+
+  # ── Fonts ──
+  google_fonts: ^6.2.1       # Barlow, Inter, Plus Jakarta Sans, JetBrains Mono, Niconne
+
+  # ── SVG ──
+  flutter_svg: ^2.0.9        # BrandLogo ColorFilter derivation
+
+  # ── Local storage ──
+  shared_preferences: ^2.2.3  # Auth token cache, dark mode pref
+
+  # ── URL ──
+  url_launcher: ^6.3.0        # CTA links, external nav
+
+  # ── Utilities ──
+  equatable: ^2.0.5           # BrandConfig value equality without boilerplate
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    # Suite manifests — shipped with the app, one per suite
+    - assets/suite/saas/manifest.json
+
+    # Client overlays — dev-only local files.
+    # In production these come from the backend API, not bundled assets.
+    - assets/client/qspace/overlay.json
+
+    # SVG placeholder — replace with real logo files before launch
+    - assets/images/

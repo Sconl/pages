@@ -1,0 +1,105 @@
+{
+  "$comment": "assets/suite/saas/manifest.json",
+  "$schema": "../../canon/schema.json",
+  "canonVersion": "canon.v2.1.0",
+  "suiteId": "saas",
+  "suiteName": "SaaS",
+  "suiteDescription": "Landing page + features + pricing/docs. Energetic constellation canvas. Built for software products, platforms, and developer tools.",
+
+  "spaces": {
+    "space_value": {
+      "screen_entry":  { "view": "screen_entry",  "label": "Home",     "nav": true },
+      "screen_explore":{ "view": "screen_explore", "label": "Features", "nav": true },
+      "screen_expand": { "view": "screen_expand",  "label": "Pricing",  "nav": true }
+    },
+    "space_system": {
+      "screen_entry":  { "view": "screen_account",  "label": "Account",  "nav": false },
+      "screen_explore":{ "view": "screen_settings", "label": "Settings", "nav": false },
+      "screen_expand": { "view": "screen_billing",  "label": "Billing",  "nav": false }
+    },
+    "space_auxiliary": {
+      "screen_entry":  { "view": "screen_help",   "label": "Help",   "nav": false },
+      "screen_explore":{ "view": "screen_legal",  "label": "Legal",  "nav": false },
+      "screen_expand": { "view": "screen_status", "label": "Status", "nav": false }
+    }
+  },
+
+  "brand": {
+    "colors": {
+      "primary":   "__default__",
+      "secondary": "__default__",
+      "tertiary":  "__default__"
+    },
+    "fonts": {
+      "hero":      "Plus Jakarta Sans",
+      "display":   "Barlow",
+      "text":      "Inter",
+      "accent":    "JetBrains Mono",
+      "signature": "Niconne"
+    },
+    "canvas": {
+      "personality": "energetic"
+    },
+    "motion": {
+      "intensity": "full"
+    },
+    "copy": {
+      "appName": "__default__",
+      "tagline": "__default__"
+    }
+  },
+
+  "features": {
+    "trialSignup":    true,
+    "pricingTable":   true,
+    "testimonials":   false,
+    "contactForm":    true,
+    "waitlist":       false,
+    "apiDocs":        true,
+    "caseStudies":    false
+  },
+
+  "content": {
+    "_comment": "Suite-level copy defaults. Client overlay wins on every key.",
+
+    "space_value.screen_entry.section_core.hero.headline": "Ship your product. Keep your brand.",
+    "space_value.screen_entry.section_core.hero.subheadline": "A production-grade site engine. Launch in hours. Edit without a developer.",
+    "space_value.screen_entry.section_core.hero.ctaPrimary": "Get started",
+    "space_value.screen_entry.section_core.hero.ctaSecondary": "See how it works",
+
+    "space_value.screen_entry.section_core.value.headline": "One engine. Any brand.",
+    "space_value.screen_entry.section_core.value.body": "QSpace Pages separates structure from style so you can ship fast without sacrificing quality.",
+
+    "space_value.screen_entry.section_core.action.headline": "Ready to launch?",
+    "space_value.screen_entry.section_core.action.body": "Join the teams already building on QSpace Pages.",
+    "space_value.screen_entry.section_core.action.cta": "Get started free",
+
+    "space_value.screen_entry.section_core.trust.stat1": "9",
+    "space_value.screen_entry.section_core.trust.stat1Label": "Template suites",
+    "space_value.screen_entry.section_core.trust.stat2": "< 24h",
+    "space_value.screen_entry.section_core.trust.stat2Label": "Time to launch",
+    "space_value.screen_entry.section_core.trust.stat3": "∞",
+    "space_value.screen_entry.section_core.trust.stat3Label": "Tenants supported",
+
+    "space_value.screen_entry.section_context.problem.headline": "The problem with every other approach",
+    "space_value.screen_entry.section_context.problem.body": "Custom builds take months. Website builders lock you in. Templates can't adapt to your brand.",
+
+    "space_value.screen_entry.section_context.solution.headline": "A different kind of site engine",
+    "space_value.screen_entry.section_context.solution.body": "Canon→Suite→Client overlay means your brand is never baked in. Change everything — copy, colors, fonts, features — without redeploying.",
+
+    "space_value.screen_entry.section_context.proof.headline": "Built for real products",
+    "space_value.screen_entry.section_context.proof.body": "From brochure sites to full portals, the same engine runs it all.",
+
+    "space_value.screen_entry.section_connect.offer.headline": "Start building today",
+    "space_value.screen_entry.section_connect.offer.body": "Pick a plan. Provision in minutes. Edit live.",
+    "space_value.screen_entry.section_connect.offer.cta": "View pricing",
+
+    "space_value.screen_entry.section_connect.path.headline": "How it works",
+    "space_value.screen_entry.section_connect.path.step1": "1. Pick a template suite",
+    "space_value.screen_entry.section_connect.path.step2": "2. Set your brand",
+    "space_value.screen_entry.section_connect.path.step3": "3. Ship. Edit live.",
+
+    "space_value.screen_entry.section_connect.extension.headline": "Built for East Africa",
+    "space_value.screen_entry.section_connect.extension.body": "M-Pesa billing, local support, East African market focus."
+  }
+}

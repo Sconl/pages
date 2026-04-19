@@ -1,0 +1,94 @@
+# docker-compose.yml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANGELOG
+# ─────────────────────────────────────────────────────────────────────────────
+#   • Initial — flutter_web (nginx), qspace_backend (Rust/Axum),
+#     postgres 15, redis 7. Full stack in one command.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Usage:
+#   Development (no backend needed — Flutter uses LocalJsonConfigProvider):
+#     flutter run -d chrome
+#
+#   Full stack local:
+#     cp backend/.env.example backend/.env  # fill in values
+#     flutter build web --release
+#     docker-compose up --build
+#
+#   DigitalOcean deploy:
+#     git pull && docker-compose down && docker-compose up -d --build
+
+version: '3.9'
+
+services:
+
+  # ── Flutter Web (Nginx) ─────────────────────────────────────────────────────
+  flutter_web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - qspace_backend
+    restart: unless-stopped
+    environment:
+      - BACKEND_URL=http://qspace_backend:8080
+
+  # ── Rust Backend (Axum) ─────────────────────────────────────────────────────
+  qspace_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:   postgres://qspace:${POSTGRES_PASSWORD:-qspace_dev}@postgres:5432/qspace_db
+      REDIS_URL:      redis://redis:6379
+      JWT_SECRET:     ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      PORT:           8080
+      RUST_LOG:       info
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost}
+    env_file:
+      - ./backend/.env
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     qspace
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qspace_dev}
+      POSTGRES_DB:       qspace_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qspace -d qspace_db"]
+      interval: 5s
+      timeout:  5s
+      retries:  5
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout:  3s
+      retries:  5
+
+volumes:
+  postgres_data:
+  redis_data:

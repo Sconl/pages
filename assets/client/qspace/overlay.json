@@ -1,0 +1,121 @@
+{
+  "$comment": "assets/client/qspace/overlay.json",
+
+  "$note": "This file is what makes QSpace itself a tenant of QSpace Pages. The platform's own marketing site — qspace.io — is rendered by the same engine it sells. Every override here is the QSpace brand. When the admin control plane is live (Cycle 4), this overlay can be managed via space_admin instead of this file. Until then, this file is the source of truth for the QSpace tenant.",
+
+  "clientId": "qspace",
+  "suiteId": "saas",
+
+  "overrides": {
+    "brand.colors.primary":   "#9933FF",
+    "brand.colors.secondary": "#0F91D2",
+    "brand.colors.tertiary":  "#FAAF2E",
+
+    "brand.canvas.personality": "energetic",
+    "brand.motion.intensity":   "full",
+
+    "brand.fonts.hero":      "Plus Jakarta Sans",
+    "brand.fonts.display":   "Barlow",
+    "brand.fonts.text":      "Inter",
+    "brand.fonts.accent":    "JetBrains Mono",
+    "brand.fonts.signature": "Niconne",
+
+    "brand.copy.appName": "QSpace",
+    "brand.copy.tagline": "Launch branded sites in hours, not months."
+  },
+
+  "features": {
+    "trialSignup":  false,
+    "pricingTable": true,
+    "testimonials": false,
+    "contactForm":  false,
+    "waitlist":     true,
+    "apiDocs":      false,
+    "caseStudies":  false
+  },
+
+  "content": {
+    "space_value.screen_entry.section_core.hero.headline": "Launch branded sites in hours, not months.",
+    "space_value.screen_entry.section_core.hero.subheadline": "QSpace Pages is a multi-tenant site engine for founders and agencies in East Africa. Pick a template. Set your brand. Ship — and edit without ever touching code again.",
+    "space_value.screen_entry.section_core.hero.ctaPrimary": "Join the waitlist",
+    "space_value.screen_entry.section_core.hero.ctaSecondary": "See how it works",
+
+    "space_value.screen_entry.section_core.value.headline": "One engine. Any brand. Zero recompile.",
+    "space_value.screen_entry.section_core.value.body": "QSpace separates structure from identity so your brand is never baked into the code. Change everything — copy, colors, fonts, features — through a live admin panel, with real-time preview.",
+
+    "space_value.screen_entry.section_core.action.headline": "Be among the first to ship.",
+    "space_value.screen_entry.section_core.action.body": "We're in private pilot. Three brands already live. Slots are limited.",
+    "space_value.screen_entry.section_core.action.cta": "Request early access",
+
+    "space_value.screen_entry.section_core.trust.stat1": "3",
+    "space_value.screen_entry.section_core.trust.stat1Label": "Brands deployed",
+    "space_value.screen_entry.section_core.trust.stat2": "< 24h",
+    "space_value.screen_entry.section_core.trust.stat2Label": "Time to launch",
+    "space_value.screen_entry.section_core.trust.stat3": "9",
+    "space_value.screen_entry.section_core.trust.stat3Label": "Template suites",
+
+    "space_value.screen_entry.section_context.problem.headline": "Building a good site shouldn't take months.",
+    "space_value.screen_entry.section_context.problem.body": "Custom builds are slow. Website builders feel cheap. Templates don't fit your brand. You're stuck choosing between fast and good — and you always lose something.",
+
+    "space_value.screen_entry.section_context.solution.headline": "A platform that bends to your brand — not the other way around.",
+    "space_value.screen_entry.section_context.solution.body": "QSpace Pages uses a Canon→Suite→Client overlay system. Your brand tokens, copy, and features override the defaults at runtime. No recompile. No designer required. What you see in the admin is exactly what your visitors see.",
+
+    "space_value.screen_entry.section_context.proof.headline": "This site is built on QSpace Pages.",
+    "space_value.screen_entry.section_context.proof.body": "QSpace.io is the first client of its own platform. Every improvement we make for customers, we eat first. That's the only way to keep it honest.",
+
+    "space_value.screen_entry.section_connect.offer.headline": "Pick a plan that fits your stage.",
+    "space_value.screen_entry.section_connect.offer.body": "Setup fee covers your first template suite and onboarding. Monthly covers hosting, admin access, and ongoing support.",
+    "space_value.screen_entry.section_connect.offer.cta": "See pricing",
+
+    "space_value.screen_entry.section_connect.path.headline": "How QSpace Pages works",
+    "space_value.screen_entry.section_connect.path.step1": "1. We provision your site on a template suite matched to your use case.",
+    "space_value.screen_entry.section_connect.path.step2": "2. You set your brand — colors, fonts, logo, copy — from a live admin panel.",
+    "space_value.screen_entry.section_connect.path.step3": "3. You ship. Then keep editing yourself, anytime, with real-time preview before you publish.",
+
+    "space_value.screen_entry.section_connect.extension.headline": "Built in Nairobi. Built for East Africa.",
+    "space_value.screen_entry.section_connect.extension.body": "M-Pesa billing. Local support. Priced for the market. Designed for the builders who are reshaping commerce and services across the continent.",
+
+    "space_value.screen_explore.section_core.hero.headline": "Everything you need to launch and grow.",
+    "space_value.screen_explore.section_core.hero.subheadline": "Nine template suites. A live admin editor. Multi-tenant architecture. Kenya-first billing.",
+
+    "space_value.screen_explore.section_context.solution.feature1Title": "9 Template Suites",
+    "space_value.screen_explore.section_context.solution.feature1Body": "Corporate, SaaS, Portfolio, Agency, Dashboard, Portal, Store, Marketplace, Membership. Pick the one that matches your business model.",
+    "space_value.screen_explore.section_context.solution.feature2Title": "Live Admin Editor",
+    "space_value.screen_explore.section_context.solution.feature2Body": "Edit copy, brand tokens, assets, and feature toggles from a structured admin panel. Preview before publish. Roll back if needed.",
+    "space_value.screen_explore.section_context.solution.feature3Title": "Zero Recompile Branding",
+    "space_value.screen_explore.section_context.solution.feature3Body": "Your brand is an overlay on a shared engine. Switch colors, fonts, canvas personality, and motion intensity at runtime.",
+    "space_value.screen_explore.section_context.solution.feature4Title": "Multi-Tenant Architecture",
+    "space_value.screen_explore.section_context.solution.feature4Body": "One codebase, unlimited clients. Each tenant gets their own brand, content, and feature configuration — isolated and portable.",
+    "space_value.screen_explore.section_context.solution.feature5Title": "Kenya-First Billing",
+    "space_value.screen_explore.section_context.solution.feature5Body": "M-Pesa integration, KES pricing, local payment rails. No dollar conversion friction.",
+    "space_value.screen_explore.section_context.solution.feature6Title": "Self-Host or Managed",
+    "space_value.screen_explore.section_context.solution.feature6Body": "Docker deploy on your own infrastructure, or let us manage it. API-first so you can plug in your own auth, database, and CMS.",
+
+    "space_value.screen_expand.section_core.hero.headline": "Honest pricing. No surprises.",
+    "space_value.screen_expand.section_core.hero.subheadline": "A one-time setup fee to get you live. A monthly fee to keep you running and growing.",
+
+    "space_value.screen_expand.section_context.solution.plan1Name": "Starter",
+    "space_value.screen_expand.section_context.solution.plan1Setup": "KES 30,000",
+    "space_value.screen_expand.section_context.solution.plan1Monthly": "KES 2,500/mo",
+    "space_value.screen_expand.section_context.solution.plan1Description": "One template suite. Basic content editing. Perfect for solopreneurs and small businesses launching their first site.",
+
+    "space_value.screen_expand.section_context.solution.plan2Name": "Business",
+    "space_value.screen_expand.section_context.solution.plan2Setup": "KES 90,000",
+    "space_value.screen_expand.section_context.solution.plan2Monthly": "KES 8,000/mo",
+    "space_value.screen_expand.section_context.solution.plan2Description": "Full admin panel — brand, content, assets, features. Suitable for growing businesses and agencies managing client sites.",
+
+    "space_value.screen_expand.section_context.solution.plan3Name": "Premium",
+    "space_value.screen_expand.section_context.solution.plan3Setup": "KES 250,000",
+    "space_value.screen_expand.section_context.solution.plan3Monthly": "KES 25,000/mo",
+    "space_value.screen_expand.section_context.solution.plan3Description": "Multi-tenant admin, developer access, priority support. For agencies running multiple client sites on one platform.",
+
+    "space_value.screen_expand.section_context.solution.plan4Name": "Enterprise",
+    "space_value.screen_expand.section_context.solution.plan4Setup": "KES 650,000+",
+    "space_value.screen_expand.section_context.solution.plan4Monthly": "Custom",
+    "space_value.screen_expand.section_context.solution.plan4Description": "Full architect access, SSO/SAML, white-label, SLAs, dedicated support. For enterprise deployments and platform integrators.",
+
+    "space_value.screen_expand.section_connect.offer.cta": "Book a demo",
+    "space_value.screen_expand.section_connect.offer.headline": "Not sure which plan?",
+    "space_value.screen_expand.section_connect.offer.body": "Book a 30-minute call. We'll scope your needs and recommend the right fit. No pressure."
+  }
+}

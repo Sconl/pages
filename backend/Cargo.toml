@@ -1,0 +1,57 @@
+# backend/Cargo.toml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANGELOG
+# ─────────────────────────────────────────────────────────────────────────────
+#   • Initial — Axum 0.7, SeaORM 0.12, PostgreSQL, Redis, JWT, S3.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[package]
+name    = "qspace_backend"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "qspace_backend"
+path = "src/main.rs"
+
+[dependencies]
+# ── Web framework ──
+axum           = { version = "0.7", features = ["macros", "multipart"] }
+tokio          = { version = "1",   features = ["full"] }
+tower          = "0.4"
+tower-http     = { version = "0.5", features = ["cors", "trace"] }
+
+# ── Database ──
+sea-orm        = { version = "0.12", features = [
+  "sqlx-postgres", "runtime-tokio-rustls", "macros"
+]}
+sea-orm-migration = "0.12"
+
+# ── Cache (Redis) ──
+redis          = { version = "0.23", features = ["tokio-comp", "connection-manager"] }
+
+# ── Auth (JWT) ──
+jsonwebtoken   = "9"
+bcrypt         = "0.15"
+
+# ── Serialization ──
+serde          = { version = "1", features = ["derive"] }
+serde_json     = "1"
+
+# ── Async / utilities ──
+uuid           = { version = "1", features = ["v4", "serde"] }
+chrono         = { version = "0.4", features = ["serde"] }
+anyhow         = "1"
+tracing        = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# ── Config ──
+dotenvy        = "0.15"
+
+# ── S3-compatible storage ──
+aws-sdk-s3     = "1"
+aws-config     = "1"
+
+[dev-dependencies]
+axum-test      = "0.3"

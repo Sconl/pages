@@ -1,0 +1,35 @@
+# .gitignore
+
+# ── Flutter ──────────────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.g.dart
+
+# ── Rust ─────────────────────────────────────────────────────────────────────
+backend/target/
+backend/.env        # NEVER commit — contains secrets
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+# docker-compose.override.yml is local-only (port remaps, volume mounts, etc.)
+docker-compose.override.yml
+
+# ── Assets (generated / large) ───────────────────────────────────────────────
+assets/images/*.png
+assets/images/*.jpg
+# DO commit SVGs and JSON manifests
+!assets/**/*.svg
+!assets/**/*.json
