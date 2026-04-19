@@ -1,33 +1,25 @@
-// lib/infrastructure/adapters/firebase_auth_provider.dart
+// lib/core/auth/auth_adapters/firebase_auth_provider.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. Firebase adapter.
-//   v1.0.1 — Fixed: ambiguous_import / extends_non_class errors caused by
-//             firebase_auth exporting its own AuthProvider class.
-//             Fixed by hiding AuthProvider from the firebase_auth import so
-//             our AuthProvider (from infrastructure/auth_provider.dart) wins
-//             unambiguously.
+//   v1.0.1 — Fixed: hide AuthProvider from firebase_auth import to prevent
+//             name collision with our AuthProvider.
+//   v1.0.2 — Moved from lib/infrastructure/adapters/ → lib/core/auth/auth_adapters/.
+//             Fixed: removed redundant import of '../auth_session.dart' — all
+//             session types are already available via '../auth_provider.dart'.
+//             Fixed: added roleHint param to signUp() to satisfy AuthPort contract.
+//             Firebase doesn't use roleHint natively — it's stored in Firestore
+//             as a 'roleHint' field for backend processing or admin review.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// ⚠️  PUBSPEC REQUIREMENT:
-//       firebase_core: ^3.0.0
-//       firebase_auth: ^5.0.0
-//       cloud_firestore: ^5.0.0
-//
-// Switch from RestJwt to Firebase by changing kAuthAdapterType in
-// lib/client/qspace/client_config.dart — nothing else changes.
 
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Hide firebase_auth's own AuthProvider to prevent the name collision with
-// our infrastructure AuthProvider. EmailAuthProvider etc. are unaffected.
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/foundation.dart';
 
-import '../auth_session.dart';
 import '../auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,6 +91,7 @@ class FirebaseAuthProvider extends AuthProvider {
     required String password,
     required String displayName,
     required String tenantId,
+    String? roleHint,         // stored in Firestore — backend or admin decides whether to honor it
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email, password: password,
@@ -118,6 +111,7 @@ class FirebaseAuthProvider extends AuthProvider {
       'displayName':           displayName,
       _kDefaultTenantIdField:  tenantId,
       'role':                  _kDefaultRole,
+      if (roleHint != null) 'roleHint': roleHint,
       'createdAt':             FieldValue.serverTimestamp(),
       'updatedAt':             FieldValue.serverTimestamp(),
     });

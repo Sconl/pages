@@ -1,19 +1,13 @@
-// lib/experience/spaces/space_auth/screens/screen_signup.dart
+// lib/spaces/space_auth/screens/screen_signup.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial. Full signup screen. Multitenant aware.
-//   v2.0.0 — Redesigned. Single column, no natural scroll. Same ConstrainedBox
-//             pattern as screen_login.dart. Two-column layout removed.
-//             Role toggle integrated — selected class.id passed as roleHint to
-//             signUp() so the backend knows which account tier to create.
-//             Copy driven by QAuthConfig.
+//   v1.0.0 — Initial.
+//   v2.0.0 — Single column, role toggle, roleHint forwarded to signUp().
+//   v2.0.1 — Fixed: AppSpacing.xxs doesn't exist — replaced with AppSpacing.xs.
+//             Fixed: import paths updated (experience/spaces → spaces).
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// Navigation via GoRouter redirect on session emit — zero context.go() after signUp().
-// roleHint is set in selectedUserClassProvider before the signUp call so the
-// router can route the new user appropriately after registration.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,26 +23,21 @@ import 'auth_widgets.dart';
 // CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Layout ──
 const _kFormMaxWidth  = 400.0;
 const _kFormPaddingH  = 32.0;
 const _kIconSize      = 20.0;
-
-// ── Labels ──
-const _kLabelName      = 'Display Name';
-const _kLabelEmail     = 'Email';
-const _kLabelPassword  = 'Password';
-const _kLabelConfirm   = 'Confirm Password';
-const _kLabelCreate    = 'Create Account';
-const _kLabelHasAcct   = 'Already have an account? ';
-const _kLabelLogin     = 'Log in';
-
-// ── Typography ──
-const _kHeadingSize    = 22.0;
+const _kHeadingSize   = 22.0;
 const _kSubheadingSize = 13.5;
-const _kLinkSize       = 13.0;
+const _kLinkSize      = 13.0;
 
-// ── Feature flags ──
+const _kLabelName    = 'Display Name';
+const _kLabelEmail   = 'Email';
+const _kLabelPassword = 'Password';
+const _kLabelConfirm = 'Confirm Password';
+const _kLabelCreate  = 'Create Account';
+const _kLabelHasAcct = 'Already have an account? ';
+const _kLabelLogin   = 'Log in';
+
 const _kDevMode = true;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +63,6 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
   final _cpwFocus   = FocusNode();
 
   AuthUserClass? _selectedClass;
-
   bool    _isLoading    = false;
   String? _errorMessage;
 
@@ -102,11 +90,8 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
         password:    _pwCtrl.text,
         displayName: _nameCtrl.text.trim(),
         tenantId:    kDefaultTenantId,
-        // Passes the role tier the user selected — backend decides whether to honor it.
-        // Some tenants auto-approve admin signups; others require manual review.
         roleHint:    classToCommit?.id,
       );
-      // GoRouter redirect fires automatically on session emit.
     } catch (e, stack) {
       debugPrint('[ScreenSignup] signUp error: $e\n$stack');
       setState(() => _errorMessage = _mapError(e));
@@ -120,24 +105,22 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
     if (msg.contains('email-already-in-use') || msg.contains('409')) {
       return 'An account with this email already exists. Try logging in.';
     }
-    if (msg.contains('weak-password'))  return 'Password must be at least 8 characters.';
-    if (msg.contains('invalid-email'))  return 'Please enter a valid email address.';
-    if (msg.contains('network'))        return 'Connection error. Check your internet.';
+    if (msg.contains('weak-password')) return 'Password must be at least 8 characters.';
+    if (msg.contains('invalid-email')) return 'Please enter a valid email address.';
+    if (msg.contains('network'))       return 'Connection error. Check your internet.';
     if (_kDevMode) return 'DEBUG: $msg';
     return 'Something went wrong. Please try again.';
   }
 
   @override
   Widget build(BuildContext context) {
-    final config  = ref.watch(authConfigProvider);
-    final screen  = MediaQuery.of(context);
+    final config = ref.watch(authConfigProvider);
+    final screen = MediaQuery.of(context);
 
     _selectedClass ??= config.defaultClass;
     final selected = _selectedClass;
 
-    final availableHeight = screen.size.height
-        - screen.padding.top
-        - screen.padding.bottom;
+    final availableHeight = screen.size.height - screen.padding.top - screen.padding.bottom;
 
     return Scaffold(
       body: AppCanvas(
@@ -157,10 +140,7 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // ── Top: branding ─────────────────────────────────
                         _TopRegion(config: config),
-
-                        // ── Middle: toggle + form ─────────────────────────
                         Form(
                           key: _formKey,
                           child: Column(
@@ -181,13 +161,10 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                                 autofocus:         true,
                                 textInputAction:   TextInputAction.next,
                                 onEditingComplete: () => _emailFocus.requestFocus(),
-                                prefixIcon: Icon(Icons.person_outline,
-                                    color: AppColors.textMuted, size: _kIconSize),
+                                prefixIcon: Icon(Icons.person_outline, color: AppColors.textMuted, size: _kIconSize),
                                 validator: (v) {
-                                  if (v == null || v.trim().length < 2) {
-                                    return 'Name must be at least 2 characters';
-                                  }
-                                  if (v.trim().length > 50) return 'Name must be under 50 characters';
+                                  if (v == null || v.trim().length < 2) return 'Name must be at least 2 characters';
+                                  if (v.trim().length > 50)             return 'Name must be under 50 characters';
                                   return null;
                                 },
                               ),
@@ -199,8 +176,7 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                                 keyboardType:      TextInputType.emailAddress,
                                 textInputAction:   TextInputAction.next,
                                 onEditingComplete: () => _pwFocus.requestFocus(),
-                                prefixIcon: Icon(Icons.email_outlined,
-                                    color: AppColors.textMuted, size: _kIconSize),
+                                prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted, size: _kIconSize),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) return 'Email is required';
                                   if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
@@ -217,12 +193,9 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                                 focusNode:         _pwFocus,
                                 textInputAction:   TextInputAction.next,
                                 onEditingComplete: () => _cpwFocus.requestFocus(),
-                                prefixIcon: Icon(Icons.lock_outline,
-                                    color: AppColors.textMuted, size: _kIconSize),
+                                prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted, size: _kIconSize),
                                 validator: (v) {
-                                  if (v == null || v.length < 8) {
-                                    return 'Password must be at least 8 characters';
-                                  }
+                                  if (v == null || v.length < 8) return 'Password must be at least 8 characters';
                                   return null;
                                 },
                               ),
@@ -234,8 +207,7 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                                 focusNode:         _cpwFocus,
                                 textInputAction:   TextInputAction.done,
                                 onEditingComplete: _submit,
-                                prefixIcon: Icon(Icons.lock_outline,
-                                    color: AppColors.textMuted, size: _kIconSize),
+                                prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted, size: _kIconSize),
                                 validator: (v) {
                                   if (v != _pwCtrl.text) return 'Passwords do not match';
                                   return null;
@@ -254,8 +226,6 @@ class _ScreenSignupState extends ConsumerState<ScreenSignup> {
                             ],
                           ),
                         ),
-
-                        // ── Bottom: login link ─────────────────────────────
                         _BottomLinks(),
                       ],
                     ),
@@ -288,19 +258,13 @@ class _TopRegion extends StatelessWidget {
         Text(
           config.signupHeading,
           textAlign: TextAlign.center,
-          style: AppTextStyles.authSubheading.copyWith(
-            fontSize:   _kHeadingSize,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTextStyles.authSubheading.copyWith(fontSize: _kHeadingSize, fontWeight: FontWeight.w600),
         ),
-        SizedBox(height: AppSpacing.xxs),
+        SizedBox(height: AppSpacing.xs),   // was xxs — minimum token is xs (4px)
         Text(
           config.signupSubheading,
           textAlign: TextAlign.center,
-          style: AppTypography.helper.copyWith(
-            fontSize: _kSubheadingSize,
-            color:    AppColors.textMuted,
-          ),
+          style: AppTypography.helper.copyWith(fontSize: _kSubheadingSize, color: AppColors.textMuted),
         ),
         SizedBox(height: AppSpacing.lg),
       ],
@@ -322,17 +286,10 @@ class _BottomLinks extends StatelessWidget {
           onPressed: () => context.go(kRouteLogin),
           child: RichText(
             text: TextSpan(children: [
-              TextSpan(
-                text:  _kLabelHasAcct,
-                style: AppTextStyles.authSubheading.copyWith(fontSize: _kLinkSize),
-              ),
+              TextSpan(text: _kLabelHasAcct, style: AppTextStyles.authSubheading.copyWith(fontSize: _kLinkSize)),
               TextSpan(
                 text: _kLabelLogin,
-                style: AppTextStyles.authSubheading.copyWith(
-                  fontSize:   _kLinkSize,
-                  color:      AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.authSubheading.copyWith(fontSize: _kLinkSize, color: AppColors.primary, fontWeight: FontWeight.w600),
               ),
             ]),
           ),

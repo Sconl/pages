@@ -1,22 +1,14 @@
-// lib/infrastructure/adapters/rest_jwt_auth_provider.dart
+// lib/core/auth/auth_adapters/rest_jwt_auth_provider.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial. JWT adapter for Rust backend.
-//             Parses JWT payload locally (no external jwt library needed).
-//             Stores tokens in shared_preferences for session persistence.
-//             StreamController manages session state since REST has no push.
+//   v1.0.0 — Initial. JWT adapter for Rust/Axum backend.
+//   v1.0.1 — Moved from lib/infrastructure/adapters/ → lib/core/auth/auth_adapters/.
+//             Fixed: removed redundant import of '../auth_session.dart'.
+//             Fixed: added roleHint param to signUp() — forwarded to backend
+//             register payload as 'role_hint'. Backend decides whether to honor it.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// This is the production adapter for the Rust/Axum backend.
-// It talks to /api/auth/login and /api/auth/register.
-//
-// Session persistence strategy:
-//   - JWT stored in shared_preferences under kStorageKeyToken
-//   - On app start, we try to parse the stored token and restore session
-//   - On expiry, we emit null and route to login
-//   - Refresh token (if backend supports it) would go in _tryRefresh()
 
 import 'dart:async';
 import 'dart:convert';
@@ -25,7 +17,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../auth_session.dart';
 import '../auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,14 +28,14 @@ const _kStorageKeyToken        = 'qspace_auth_token';
 const _kStorageKeyRefreshToken = 'qspace_auth_refresh_token';
 
 // ── API endpoints (relative to baseUrl) ──
-const _kEndpointLogin          = '/api/auth/login';
-const _kEndpointRegister       = '/api/auth/register';
-const _kEndpointResetPassword  = '/api/auth/reset-password';
-const _kEndpointRefresh        = '/api/auth/refresh';
+const _kEndpointLogin         = '/api/auth/login';
+const _kEndpointRegister      = '/api/auth/register';
+const _kEndpointResetPassword = '/api/auth/reset-password';
+const _kEndpointRefresh       = '/api/auth/refresh';
 
 // ── HTTP ──
-const _kConnectTimeout         = Duration(seconds: 10);
-const _kReceiveTimeout         = Duration(seconds: 10);
+const _kConnectTimeout = Duration(seconds: 10);
+const _kReceiveTimeout = Duration(seconds: 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RestJwtAuthProvider
@@ -64,7 +55,6 @@ class RestJwtAuthProvider extends AuthProvider {
       receiveTimeout: _kReceiveTimeout,
     ));
 
-    // Try to restore session on startup — emit async so listeners attach first.
     _restoreSession();
   }
 
@@ -93,9 +83,9 @@ class RestJwtAuthProvider extends AuthProvider {
       'password': password,
     });
 
-    final token   = response.data['token']   as String;
-    final expiry  = response.data['expires_at'] as String?;
-    final user    = response.data['user']    as Map<String, dynamic>;
+    final token  = response.data['token']      as String;
+    final expiry = response.data['expires_at'] as String?;
+    final user   = response.data['user']       as Map<String, dynamic>;
 
     final session = _sessionFromTokenAndUser(token, user, expiry);
     await _persistSession(token, response.data['refresh_token'] as String?);
@@ -109,16 +99,17 @@ class RestJwtAuthProvider extends AuthProvider {
     required String password,
     required String displayName,
     required String tenantId,
+    String? roleHint,         // forwarded to backend — backend decides whether to honor it
   }) async {
-    // Register creates the user — sign-in follows immediately.
     await _dio.post(_kEndpointRegister, data: {
       'email':      email,
       'password':   password,
       'name':       displayName,
       'tenant_id':  tenantId,
+      if (roleHint != null) 'role_hint': roleHint,
     });
 
-    // Backend doesn't return a token on register — we sign in to get one.
+    // Backend doesn't return a token on register — sign in to get one.
     return signIn(email: email, password: password);
   }
 
@@ -138,7 +129,7 @@ class RestJwtAuthProvider extends AuthProvider {
 
   @override
   Future<QAuthSession?> refreshSession() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs        = await SharedPreferences.getInstance();
     final refreshToken = prefs.getString(_kStorageKeyRefreshToken);
     if (refreshToken == null) return null;
 
@@ -146,15 +137,14 @@ class RestJwtAuthProvider extends AuthProvider {
       final response = await _dio.post(_kEndpointRefresh, data: {
         'refresh_token': refreshToken,
       });
-      final token   = response.data['token']   as String;
+      final token   = response.data['token']      as String;
       final expiry  = response.data['expires_at'] as String?;
-      final user    = response.data['user']    as Map<String, dynamic>;
+      final user    = response.data['user']       as Map<String, dynamic>;
       final session = _sessionFromTokenAndUser(token, user, expiry);
       await _persistSession(token, response.data['refresh_token'] as String?);
       _emitSession(session);
       return session;
     } catch (_) {
-      // Refresh failed — force re-login
       await signOut();
       return null;
     }
@@ -162,7 +152,6 @@ class RestJwtAuthProvider extends AuthProvider {
 
   // ── Private helpers ──────────────────────────────────────────────────────
 
-  // Restores session from stored JWT on app cold-start.
   Future<void> _restoreSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -175,10 +164,8 @@ class RestJwtAuthProvider extends AuthProvider {
       final payload = _parseJwt(token);
       final expiry  = payload['exp'] as int?;
 
-      // JWT is expired — clear it and emit null
       if (expiry != null &&
-          DateTime.fromMillisecondsSinceEpoch(expiry * 1000)
-              .isBefore(DateTime.now())) {
+          DateTime.fromMillisecondsSinceEpoch(expiry * 1000).isBefore(DateTime.now())) {
         await prefs.remove(_kStorageKeyToken);
         _sessionController.add(null);
         return;
@@ -188,7 +175,6 @@ class RestJwtAuthProvider extends AuthProvider {
       _currentSession = session;
       _sessionController.add(session);
     } catch (e) {
-      // Corrupted token — start fresh
       debugPrint('[RestJwtAuthProvider] session restore failed: $e');
       _sessionController.add(null);
     }
@@ -198,17 +184,16 @@ class RestJwtAuthProvider extends AuthProvider {
     String token,
     Map<String, dynamic> user,
     String? expiryIso,
-  ) {
-    return QAuthSession(
-      userId:      user['id']   as String,
-      email:       user['email'] as String,
-      displayName: user['name'] as String? ?? '',
-      tenantId:    user['tenant_id'] as String? ?? '',
-      role:        QRoleX.fromString(user['role'] as String?),
-      expiresAt:   expiryIso != null ? DateTime.tryParse(expiryIso) : null,
-      token:       token,
-    );
-  }
+  ) =>
+      QAuthSession(
+        userId:      user['id']        as String,
+        email:       user['email']     as String,
+        displayName: user['name']      as String? ?? '',
+        tenantId:    user['tenant_id'] as String? ?? '',
+        role:        QRoleX.fromString(user['role'] as String?),
+        expiresAt:   expiryIso != null ? DateTime.tryParse(expiryIso) : null,
+        token:       token,
+      );
 
   QAuthSession _sessionFromJwtPayload(String token, Map<String, dynamic> p) {
     final expiry = p['exp'] as int?;
@@ -238,15 +223,11 @@ class RestJwtAuthProvider extends AuthProvider {
     _sessionController.add(session);
   }
 
-  // Decode JWT payload without a library.
-  // JWT is three base64url segments: header.payload.signature
   Map<String, dynamic> _parseJwt(String token) {
     final parts = token.split('.');
     if (parts.length != 3) throw const FormatException('Invalid JWT format');
-    final payload = parts[1];
-    // base64Url needs padding to a multiple of 4
-    final normalized = base64Url.normalize(payload);
-    final decoded = utf8.decode(base64Url.decode(normalized));
+    final normalized = base64Url.normalize(parts[1]);
+    final decoded    = utf8.decode(base64Url.decode(normalized));
     return jsonDecode(decoded) as Map<String, dynamic>;
   }
 }
