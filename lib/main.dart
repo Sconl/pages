@@ -8,6 +8,9 @@
 //             lib/interface/ — main.dart is deliberately minimal.
 //   v1.1.0 — Added WidgetsFlutterBinding.ensureInitialized() for async setup.
 //             Added Firebase init stub (no-op unless Firebase adapter is active).
+//   v1.2.0 — No changes to this file. QAdminShell now receives its config via
+//             client_config.dart → app_router.dart → ShellRoute builder.
+//             main.dart remains unaware of the admin config — correct separation.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // main.dart does three things and nothing else:
@@ -15,7 +18,14 @@
 //   2. Run any adapter-specific setup (Firebase init if using Firebase adapter)
 //   3. Hand off to AppRoot
 //
-// Everything else — ProviderScope, BrandScope, GoRouter — lives in lib/interface/.
+// Everything else — ProviderScope, BrandScope, GoRouter, QAdminShell config —
+// lives in lib/interface/ and lib/core/router/.
+//
+// Admin config wiring:
+//   kQSpaceAdminConfig (client_config.dart)
+//     → app_router.dart ShellRoute builder
+//     → QAdminShell(config: kQSpaceAdminConfig)
+//   main.dart never imports admin config directly.
 
 import 'package:flutter/material.dart';
 
@@ -26,13 +36,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Adapter-specific startup. Each adapter initializes only what it needs.
+  // Add cases here as new adapters (Supabase, custom, etc.) are introduced.
   await _initAdapter();
 
   runApp(const AppRoot());
 }
 
 // Runs any one-time setup required by the active auth adapter.
-// Add cases here as new adapters are added.
 Future<void> _initAdapter() async {
   switch (kAuthAdapterType) {
     case AuthAdapterType.firebase:
@@ -42,7 +52,7 @@ Future<void> _initAdapter() async {
       // );
       break;
     case AuthAdapterType.restJwt:
-      // No init needed — RestJwtAuthProvider sets up Dio lazily.
+      // No init needed — RestJwtAuthProvider sets up Dio lazily on first call.
       break;
   }
 }

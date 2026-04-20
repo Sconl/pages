@@ -1,31 +1,31 @@
-// lib/experience/spaces/space_admin/shell/q_admin_shell.dart
+// lib/spaces/space_admin/shell/q_admin_shell.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   • Refactored nav to read from kAdminScreenRegistry — adding a screen is
-//     now a one-file change (admin_screen_registry.dart), never this file.
-//   • Added AdminBrandDraftScope + AdminPanelControllerScope wrappers so brand
-//     editing and preview state is accessible anywhere in the admin subtree.
-//   • Auth-ready sidebar: greeting, profile icon with dropdown (Settings +
-//     Logout), dev mode badge. Wire QAuthSession when auth is live.
-//   • Preview panel slides in from the right using AnimatedContainer with
-//     OverflowBox so content stays full-width during the width animation.
-//   • _LockedScreenStub updated to show lockNote from the registry entry.
+//   v1.0.0 — Initial. QAdminShell with registry-driven nav, three scopes
+//             (DevScreenSettings, AdminBrandDraft, AdminPanelController),
+//             auth-ready sidebar header with greeting + profile popup + logout.
+//   v1.1.0 — Added QAdminConfigScope. Shell now reads QAdminConfig to decide
+//             per-portal visibility and lock state. Registry locked=true always
+//             wins. Config hidden portals are excluded from the nav entirely.
+//             devModeEnabled badge reads from config — no more hardcoded const.
+//             Sidebar disabled portals shown greyed without tapping.
+//             Import paths corrected to lib/spaces/... structure.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// DEPENDENCY CHAIN:
-//   QAdminShell
-//     → DevScreenSettingsScope (owns _devSettings)
-//     → AdminBrandDraftScope   (owns _brandDraft)
-//     → AdminPanelControllerScope (owns _panelCtrl)
-//       → sidebar / IndexedStack / AdminPreviewPanel
+// SCOPE CHAIN (outer → inner):
+//   QAdminConfigScope       → portals read access rules
+//   DevScreenSettingsScope  → space_dev reads toggles
+//   AdminBrandDraftScope    → brand portal + preview panel
+//   AdminPanelControllerScope → any screen can open/close the preview panel
 
 import 'package:flutter/material.dart';
-import '../../../../core/style/app_style.dart';
-import '../../../../core/admin/dev_screen_settings.dart';
-import '../../../../core/admin/admin_brand_draft.dart';
-import '../../../../core/admin/admin_screen_registry.dart';
+import '../../../core/style/app_style.dart';
+import '../../../core/admin/dev_screen_settings.dart';
+import '../../../core/admin/admin_brand_draft.dart';
+import '../../../core/admin/admin_screen_registry.dart';
+import '../../../core/admin/admin_config.dart';
 import '../widgets/admin_preview_panel.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,45 +33,34 @@ import '../widgets/admin_preview_panel.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Layout ────────────────────────────────────────────────────────────────────
-const double _kSidebarWidth        = 240.0;
-const double _kSidebarHeaderH      = 76.0;
-const double _kNavItemHeight       = 44.0;
-const double _kNavItemHorizPad     = 12.0;
-const double _kNavItemBorderR      = 8.0;
-const double _kNavIconSize         = 18.0;
-const double _kPreviewPanelWidth   = 440.0;  // matches Claude artifact panel feel
-const double _kBreakpointSidebar   = 768.0;  // below this → drawer mode
-
-// ── Dev mode auth stub ────────────────────────────────────────────────────────
-// Replace these with QAuthSession fields once auth is wired.
-// TODO(auth): replace with ref.watch(currentSessionProvider) when live.
-const String _kDevDisplayName  = 'Dev Admin';
-const String _kDevEmail        = 'dev@qspace.local';
-const String _kDevRole         = 'architect';  // highest access during dev
-const String _kDevModeBadge    = 'DEV MODE';
+const double _kSidebarWidth      = 240.0;
+const double _kSidebarHeaderH    = 76.0;
+const double _kNavItemH          = 44.0;
+const double _kNavItemHPad       = 12.0;
+const double _kNavItemBorderR    = 8.0;
+const double _kNavIconSize       = 18.0;
+const double _kPreviewPanelWidth = 440.0;
+const double _kBreakpoint        = 768.0;
 
 // ── Copy ──────────────────────────────────────────────────────────────────────
-const String _kAdminLabel      = 'Admin Panel';
-const String _kVersionLabel    = 'QSpace Pages v2.2.0';
-const String _kFooterSubLabel  = 'Control Plane · Canon v2.2.0';
 const String _kLockedSuffix    = 'Cycle 3+';
 const String _kProfileSettings = 'Settings';
 const String _kProfileLogout   = 'Log Out';
 const String _kDevLogoutNote   =
-    'Auth not wired yet — this is a dev stub. '
-    'Wire QAdminShell.onLogout to your AuthPort.signOut() call.';
+    'Auth is not wired yet — this is a dev stub. '
+    'Wire QAdminShell with your AuthPort.signOut() call when auth is live.';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // END CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// QAdminShell
-// ─────────────────────────────────────────────────────────────────────────────
-
 class QAdminShell extends StatefulWidget {
-  const QAdminShell({super.key});
+  // The config is injected here (from client_config.dart via AppRoot or main.dart)
+  // so the shell is reusable across tenants without importing client_config directly.
+  final QAdminConfig config;
+
+  const QAdminShell({super.key, required this.config});
 
   @override
   State<QAdminShell> createState() => _QAdminShellState();
@@ -79,8 +68,6 @@ class QAdminShell extends StatefulWidget {
 
 class _QAdminShellState extends State<QAdminShell> {
 
-  // These three live here and are the single owners of their respective state.
-  // The scopes below make them accessible anywhere in the admin subtree.
   final _devSettings = DevScreenSettings();
   final _brandDraft  = AdminBrandDraft();
   final _panelCtrl   = AdminPanelController();
@@ -96,112 +83,112 @@ class _QAdminShellState extends State<QAdminShell> {
     super.dispose();
   }
 
-  // Builds the screen list from the registry — locked entries get a stub.
-  // The IndexedStack keeps these alive between nav switches.
+  // Builds the visible portal list by merging registry with config.
+  // Portals hidden in config are excluded from the list entirely — their
+  // IndexedStack slot simply doesn't exist.
+  List<AdminScreenEntry> get _visiblePortals {
+    return kAdminScreenRegistry.where((entry) {
+      final access = widget.config.effectiveAccessFor(
+        entry.id,
+        registryLocked:  entry.locked,
+        registryLockNote: entry.lockNote,
+      );
+      return access.enabled;
+    }).toList();
+  }
+
   List<Widget> get _screens {
-    return kAdminScreenRegistry.map((entry) {
-      if (entry.locked) {
-        return _LockedScreenStub(label: entry.label, note: entry.lockNote);
+    return _visiblePortals.map((entry) {
+      final access = widget.config.effectiveAccessFor(
+        entry.id,
+        registryLocked:  entry.locked,
+        registryLockNote: entry.lockNote,
+      );
+      if (access.locked) {
+        return _LockedScreenStub(label: entry.label, note: access.lockNote);
       }
       return entry.screen;
     }).toList();
   }
 
   void _selectIndex(int i) {
-    if (kAdminScreenRegistry[i].locked) return;
+    final entry = _visiblePortals[i];
+    final access = widget.config.effectiveAccessFor(
+      entry.id,
+      registryLocked: entry.locked,
+      registryLockNote: entry.lockNote,
+    );
+    if (access.locked || !access.enabled) return;
     setState(() => _selectedIndex = i);
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       Navigator.pop(context);
     }
   }
 
-  // Dev-mode logout stub. Wire this to AuthPort.signOut() when auth is live.
   void _handleLogout(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _kDevLogoutNote,
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary),
-        ),
-        backgroundColor: AppColors.surfaceLit,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardBR),
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    // TODO(auth): replace this snackbar with AuthPort.signOut() + GoRouter redirect.
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_kDevLogoutNote,
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary)),
+      backgroundColor: AppColors.surfaceLit,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardBR),
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Three scopes, innermost to outermost:
-    //   DevScreenSettingsScope → space_dev reads this
-    //   AdminBrandDraftScope   → brand screen + preview panel read this
-    //   AdminPanelControllerScope → any screen can open/close the panel
-    return DevScreenSettingsScope(
-      settings: _devSettings,
-      child: AdminBrandDraftScope(
-        draft: _brandDraft,
-        child: AdminPanelControllerScope(
-          controller: _panelCtrl,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= _kBreakpointSidebar;
-              return isDesktop
-                  ? _buildDesktopLayout(context)
-                  : _buildMobileLayout(context);
-            },
+    // Clamp index in case portal count changes between builds.
+    if (_selectedIndex >= _visiblePortals.length) {
+      _selectedIndex = 0;
+    }
+
+    return QAdminConfigScope(
+      config: widget.config,
+      child: DevScreenSettingsScope(
+        settings: _devSettings,
+        child: AdminBrandDraftScope(
+          draft: _brandDraft,
+          child: AdminPanelControllerScope(
+            controller: _panelCtrl,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return constraints.maxWidth >= _kBreakpoint
+                    ? _buildDesktop(context)
+                    : _buildMobile(context);
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── Desktop: sidebar + content + optional preview panel ──────────────────
-  Widget _buildDesktopLayout(BuildContext context) {
-    // Reading panelCtrl here makes the Row rebuild when the panel opens/closes.
+  Widget _buildDesktop(BuildContext context) {
     final panelOpen = AdminPanelControllerScope.of(context).isOpen;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Row(
         children: [
           _AdminSidebar(
+            portals:       _visiblePortals,
             selectedIndex: _selectedIndex,
-            onSelect: _selectIndex,
-            displayName: _kDevDisplayName,
-            email: _kDevEmail,
-            role: _kDevRole,
-            onLogout: () => _handleLogout(context),
-            onSettingsTap: () {
-              // TODO(auth): navigate to profile/settings screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Settings coming in Cycle 3.',
-                    style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary),
-                  ),
-                  backgroundColor: AppColors.surfaceLit,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            config:        widget.config,
+            onSelect:      _selectIndex,
+            onLogout:      () => _handleLogout(context),
+            onSettingsTap: () => _snack(context, 'Settings coming in Cycle 3.'),
           ),
           VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
-
-          // Content — fills remaining space, compresses when panel opens
           Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            child: IndexedStack(index: _selectedIndex, children: _screens),
           ),
-
-          // Preview panel — animates its width using OverflowBox so the
-          // panel content stays at full width during the animation
+          // Animated preview panel — OverflowBox keeps content at full width
+          // while the AnimatedContainer width collapses to 0.
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            width: panelOpen ? _kPreviewPanelWidth + 1 : 0, // +1 for divider
+            width: panelOpen ? _kPreviewPanelWidth + 1 : 0,
             child: OverflowBox(
               maxWidth: _kPreviewPanelWidth + 1,
               alignment: Alignment.centerRight,
@@ -221,9 +208,10 @@ class _QAdminShellState extends State<QAdminShell> {
     );
   }
 
-  // ── Mobile: AppBar + Drawer ───────────────────────────────────────────────
-  Widget _buildMobileLayout(BuildContext context) {
-    final currentLabel = kAdminScreenRegistry[_selectedIndex].label;
+  Widget _buildMobile(BuildContext context) {
+    final label = _visiblePortals.isNotEmpty
+        ? _visiblePortals[_selectedIndex].label
+        : 'Admin';
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.background,
@@ -234,7 +222,7 @@ class _QAdminShellState extends State<QAdminShell> {
           icon: Icon(Icons.menu, color: AppColors.textPrimary),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: Text(currentLabel, style: AppTypography.h4),
+        title: Text(label, style: AppTypography.h4),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: AppColors.border),
@@ -243,43 +231,45 @@ class _QAdminShellState extends State<QAdminShell> {
       drawer: Drawer(
         backgroundColor: AppColors.surface,
         child: _AdminSidebar(
+          portals:       _visiblePortals,
           selectedIndex: _selectedIndex,
-          onSelect: _selectIndex,
-          displayName: _kDevDisplayName,
-          email: _kDevEmail,
-          role: _kDevRole,
-          onLogout: () => _handleLogout(context),
+          config:        widget.config,
+          onSelect:      _selectIndex,
+          onLogout:      () => _handleLogout(context),
           onSettingsTap: () {},
         ),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
     );
+  }
+
+  void _snack(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary)),
+      backgroundColor: AppColors.surfaceLit,
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _AdminSidebar — the nav column used in both desktop and mobile drawer
+// _AdminSidebar
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminSidebar extends StatelessWidget {
-  final int selectedIndex;
+  final List<AdminScreenEntry> portals;
+  final int            selectedIndex;
+  final QAdminConfig   config;
   final ValueChanged<int> onSelect;
-  final String displayName;
-  final String email;
-  final String role;
-  final VoidCallback onLogout;
-  final VoidCallback onSettingsTap;
+  final VoidCallback   onLogout;
+  final VoidCallback   onSettingsTap;
 
   const _AdminSidebar({
+    required this.portals,
     required this.selectedIndex,
+    required this.config,
     required this.onSelect,
-    required this.displayName,
-    required this.email,
-    required this.role,
     required this.onLogout,
     required this.onSettingsTap,
   });
@@ -293,35 +283,35 @@ class _AdminSidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SidebarHeader(
-            displayName: displayName,
-            email: email,
-            role: role,
-            onLogout: onLogout,
+            config:        config,
+            onLogout:      onLogout,
             onSettingsTap: onSettingsTap,
           ),
           Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 6),
-
-          // Nav items built from registry
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              itemCount: kAdminScreenRegistry.length,
+              itemCount: portals.length,
               itemBuilder: (context, i) {
-                final entry = kAdminScreenRegistry[i];
+                final entry = portals[i];
+                final access = config.effectiveAccessFor(
+                  entry.id,
+                  registryLocked:  entry.locked,
+                  registryLockNote: entry.lockNote,
+                );
                 return _AdminNavItem(
-                  icon: entry.icon,
-                  label: entry.label,
-                  isSelected: selectedIndex == i && !entry.locked,
-                  isLocked: entry.locked,
-                  onTap: () => onSelect(i),
+                  icon:       entry.icon,
+                  label:      entry.label,
+                  isSelected: selectedIndex == i && !access.locked,
+                  isLocked:   access.locked,
+                  onTap:      () => onSelect(i),
                 );
               },
             ),
           ),
-
           Divider(height: 1, color: AppColors.border),
-          _SidebarFooter(),
+          _SidebarFooter(versionLabel: config.versionLabel),
         ],
       ),
     );
@@ -330,20 +320,16 @@ class _AdminSidebar extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _SidebarHeader — auth-ready header with greeting + profile
+// _SidebarHeader — auth-ready, reads dev info from QAdminConfig
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SidebarHeader extends StatelessWidget {
-  final String displayName;
-  final String email;
-  final String role;
+  final QAdminConfig config;
   final VoidCallback onLogout;
   final VoidCallback onSettingsTap;
 
   const _SidebarHeader({
-    required this.displayName,
-    required this.email,
-    required this.role,
+    required this.config,
     required this.onLogout,
     required this.onSettingsTap,
   });
@@ -357,17 +343,19 @@ class _SidebarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // In dev mode: use config dev stubs.
+    // TODO(auth): replace with ref.watch(currentSessionProvider) when auth is live.
+    final displayName = config.devModeEnabled ? config.devDisplayName : 'Admin';
+    final roleLabel   = config.devModeEnabled ? config.devRoleLabel   : '';
+
     return SizedBox(
       height: _kSidebarHeaderH,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: _kNavItemHorizPad, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: _kNavItemHPad, vertical: 10),
         child: Row(
           children: [
-            // Logo icon
             BrandLogoEngine.iconWhite(width: 22, height: 22),
             const SizedBox(width: 10),
-
-            // Greeting + admin label
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -376,49 +364,38 @@ class _SidebarHeader extends StatelessWidget {
                   Text(
                     '${_greeting()}, $displayName',
                     style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
+                      color: AppColors.textSecondary, fontSize: 10,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    _kAdminLabel,
-                    style: AppTypography.h5.copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  // Dev mode badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-                    ),
-                    child: Text(
-                      _kDevModeBadge,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.warning,
-                        fontSize: 7,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                  Text(config.adminTitle, style: AppTypography.h5.copyWith(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  )),
+                  if (config.devModeEnabled) ...[
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(3),
+                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
                       ),
+                      child: Text('DEV MODE', style: AppTypography.caption.copyWith(
+                        color: AppColors.warning, fontSize: 7,
+                        fontWeight: FontWeight.w700, letterSpacing: 0.5,
+                      )),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
-
-            // Profile icon → popup menu
             _ProfileMenu(
-              displayName: displayName,
-              email: email,
-              role: role,
-              onLogout: onLogout,
+              displayName:   displayName,
+              email:         config.devModeEnabled ? config.devEmail : '',
+              roleLabel:     roleLabel,
+              onLogout:      onLogout,
               onSettingsTap: onSettingsTap,
             ),
           ],
@@ -430,20 +407,20 @@ class _SidebarHeader extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _ProfileMenu — avatar icon that opens a popup with Settings + Logout
+// _ProfileMenu
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ProfileMenu extends StatelessWidget {
   final String displayName;
   final String email;
-  final String role;
+  final String roleLabel;
   final VoidCallback onLogout;
   final VoidCallback onSettingsTap;
 
   const _ProfileMenu({
     required this.displayName,
     required this.email,
-    required this.role,
+    required this.roleLabel,
     required this.onLogout,
     required this.onSettingsTap,
   });
@@ -463,36 +440,30 @@ class _ProfileMenu extends StatelessWidget {
         if (value == 'settings') onSettingsTap();
       },
       itemBuilder: (_) => [
-        // User info — not selectable
         PopupMenuItem<String>(
           enabled: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                displayName,
-                style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
-              ),
-              Text(
-                email,
-                style: AppTypography.caption.copyWith(color: AppColors.textMuted, fontSize: 10),
-              ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(
-                  role,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+              Text(displayName.isNotEmpty ? displayName : 'Admin',
+                  style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              if (email.isNotEmpty)
+                Text(email, style: AppTypography.caption.copyWith(
+                  color: AppColors.textMuted, fontSize: 10,
+                )),
+              if (roleLabel.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(3),
                   ),
+                  child: Text(roleLabel, style: AppTypography.caption.copyWith(
+                    color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.w700,
+                  )),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -513,17 +484,15 @@ class _ProfileMenu extends StatelessWidget {
             children: [
               Icon(Icons.logout_outlined, size: 14, color: AppColors.error),
               const SizedBox(width: 8),
-              Text(
-                _kProfileLogout,
-                style: AppTypography.bodySmall.copyWith(color: AppColors.error),
-              ),
+              Text(_kProfileLogout, style: AppTypography.bodySmall.copyWith(
+                color: AppColors.error,
+              )),
             ],
           ),
         ),
       ],
       child: Container(
-        width: 32,
-        height: 32,
+        width: 32, height: 32,
         decoration: BoxDecoration(
           gradient: AppGradients.avatar,
           shape: BoxShape.circle,
@@ -531,11 +500,9 @@ class _ProfileMenu extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+            displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
             style: AppTypography.caption.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
+              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
             ),
           ),
         ),
@@ -546,26 +513,25 @@ class _ProfileMenu extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _SidebarFooter — version + plane label
+// _SidebarFooter
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SidebarFooter extends StatelessWidget {
+  final String versionLabel;
+  const _SidebarFooter({required this.versionLabel});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(_kNavItemHorizPad),
+      padding: const EdgeInsets.all(_kNavItemHPad),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_kVersionLabel, style: AppTypography.caption),
+          Text(versionLabel, style: AppTypography.caption),
           const SizedBox(height: 2),
-          Text(
-            _kFooterSubLabel,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 9,
-            ),
-          ),
+          Text('Control Plane · Canon v2.2.0', style: AppTypography.caption.copyWith(
+            color: AppColors.textMuted, fontSize: 9,
+          )),
         ],
       ),
     );
@@ -574,14 +540,14 @@ class _SidebarFooter extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _AdminNavItem — single sidebar nav row
+// _AdminNavItem
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminNavItem extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final bool isSelected;
-  final bool isLocked;
+  final String   label;
+  final bool     isSelected;
+  final bool     isLocked;
   final VoidCallback onTap;
 
   const _AdminNavItem({
@@ -604,9 +570,9 @@ class _AdminNavItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        height: _kNavItemHeight,
+        height: _kNavItemH,
         margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: _kNavItemHorizPad),
+        padding: const EdgeInsets.symmetric(horizontal: _kNavItemHPad),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(_kNavItemBorderR),
@@ -619,17 +585,13 @@ class _AdminNavItem extends StatelessWidget {
             Icon(icon, size: _kNavIconSize, color: color),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                label,
-                style: AppTypography.body.copyWith(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
+              child: Text(label, style: AppTypography.body.copyWith(
+                color: color,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              )),
             ),
-            if (isLocked)
-              Icon(Icons.lock_outline, size: 11, color: AppColors.textMuted),
+            if (isLocked) Icon(Icons.lock_outline, size: 11, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -639,11 +601,11 @@ class _AdminNavItem extends StatelessWidget {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _LockedScreenStub — placeholder for unbuilt screens
+// _LockedScreenStub
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LockedScreenStub extends StatelessWidget {
-  final String label;
+  final String  label;
   final String? note;
   const _LockedScreenStub({required this.label, this.note});
 
@@ -665,22 +627,15 @@ class _LockedScreenStub extends StatelessWidget {
           const SizedBox(height: 20),
           Text(label, style: AppTypography.h4),
           const SizedBox(height: 8),
-          Text(
-            'Available in $_kLockedSuffix',
-            style: AppTypography.bodySmall,
-          ),
+          Text('Available in $_kLockedSuffix', style: AppTypography.bodySmall),
           if (note != null) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: 360,
-              child: Text(
-                note!,
-                textAlign: TextAlign.center,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textMuted,
-                  height: 1.5,
-                ),
-              ),
+              child: Text(note!, textAlign: TextAlign.center,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted, height: 1.5,
+                  )),
             ),
           ],
         ],
