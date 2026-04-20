@@ -3,90 +3,81 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   • Initial release — AdminScreenEntry model + kAdminScreenRegistry list.
-//     This is the single place to register admin screens. The shell reads
-//     this list and builds its nav automatically — no shell changes needed
-//     when adding a new admin screen. Ever.
+//   v1.0.0 — Initial. AdminScreenEntry + kAdminScreenRegistry flat list.
+//   v1.1.0 — Refactored to portal architecture. Imports point to portal shells.
+//             screen_admin/ folder replaced by admin_portals/. Registry entries
+//             carry ids matching QAdminConfig.portalAccess keys.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// HOW TO ADD A NEW ADMIN SCREEN:
-//   1. Create your screen file in space_admin/screens/screen_admin_<name>.dart
-//   2. Add the import below (uncomment or add a new line)
-//   3. Add an AdminScreenEntry to kAdminScreenRegistry
-//   4. Done. The shell, nav, IndexedStack — all update automatically.
-//
-// locked: true = renders a stub instead of the real screen.
-// Use it for screens that are spec'd but not implemented yet.
+// HOW TO ADD A NEW PORTAL:
+//   1. mkdir lib/spaces/space_admin/admin_portals/<n>_portal/
+//   2. Build: shell_<n>_root.dart + layout_<n>_config/registry + sections + widgets
+//   3. Import shell below (add a new import line)
+//   4. Add AdminScreenEntry to kAdminScreenRegistry
+//   5. Add AdminPortalAccess entry to QAdminConfig presets in admin_config.dart
+//   6. Add the QSpace config entry in client_config.dart
+//   Done — shell, nav, IndexedStack, config access all update automatically.
 
 import 'package:flutter/material.dart';
-import '../../spaces/space_admin/screen_admin/screen_admin_overview.dart';
-import '../../spaces/space_admin/screen_admin/screen_admin_features.dart';
-import '../../spaces/space_admin/screen_admin/screen_admin_brand.dart';
-// Uncomment these as each screen is built:
-// import '../../experience/spaces/space_admin/screens/screen_admin_content.dart';
-// import '../../experience/spaces/space_admin/screens/screen_admin_assets.dart';
-// import '../../experience/spaces/space_admin/screens/screen_admin_preview.dart';
-// import '../../experience/spaces/space_admin/screens/screen_admin_dev.dart';
+import '../../spaces/space_admin/admin_portals/dashboard_portal/shell_dashboard_root.dart';
+import '../../spaces/space_admin/admin_portals/brand_portal/shell_brand_root.dart';
+import '../../spaces/space_admin/admin_portals/features_portal/shell_features_root.dart';
+import '../../spaces/space_admin/admin_portals/settings_portal/shell_settings_root.dart';
+// Add portal shells as they're built:
+// import '../../spaces/space_admin/admin_portals/content_portal/shell_content_root.dart';
+// import '../../spaces/space_admin/admin_portals/assets_portal/shell_assets_root.dart';
+// import '../../spaces/space_admin/admin_portals/pricing_portal/shell_pricing_root.dart';
+// import '../../spaces/space_admin/admin_portals/profile_portal/shell_profile_root.dart';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AdminScreenEntry — the data model for a single nav item + screen
+// AdminScreenEntry — top-level nav item + portal shell
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// id must match the key in QAdminConfig.portalAccess.
+// The shell merges the registry list with the runtime config at build time.
 
 @immutable
 class AdminScreenEntry {
-  /// Short machine-readable id — used for analytics, deeplinks, etc.
-  final String id;
-
-  /// Sidebar icon.
+  final String   id;       // matches QAdminConfig.portalAccess key
   final IconData icon;
-
-  /// Sidebar label — also used as the screen title in mobile AppBar.
-  final String label;
-
-  /// The actual screen widget. Ignored (replaced by stub) when locked=true.
-  /// Use const constructors here — they're essentially free.
-  final Widget screen;
-
-  /// When true the nav item shows a lock icon and tapping is a no-op.
-  /// The screen slot shows _LockedScreenStub(note: lockNote) instead.
-  final bool locked;
-
-  /// Shown below the lock icon on the stub screen. Explain when it ships.
-  final String? lockNote;
+  final String   label;
+  final Widget   screen;   // the portal shell widget
+  final bool     locked;   // registry-level lock (not built yet)
+  final String?  lockNote;
 
   const AdminScreenEntry({
     required this.id,
     required this.icon,
     required this.label,
     required this.screen,
-    this.locked = false,
+    this.locked   = false,
     this.lockNote,
   });
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// kAdminScreenRegistry — THE LIST
+// kAdminScreenRegistry
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Order here = order in the sidebar. Group logically.
-// The shell reads this at build time — it's const so there's zero overhead.
+// Order = sidebar order. The shell merges this with QAdminConfig at build time.
+// Registry locked=true always wins — config cannot unlock what isn't implemented.
 
 final List<AdminScreenEntry> kAdminScreenRegistry = const [
 
   AdminScreenEntry(
-    id:     'overview',
+    id:     'dashboard',
     icon:   Icons.space_dashboard_outlined,
-    label:  'Overview',
-    screen: ScreenAdminOverview(),
+    label:  'Dashboard',
+    screen: ShellDashboardRoot(),
   ),
 
   AdminScreenEntry(
     id:     'brand',
     icon:   Icons.palette_outlined,
     label:  'Brand',
-    screen: ScreenAdminBrand(),
+    screen: ShellBrandRoot(),
   ),
 
   AdminScreenEntry(
@@ -112,28 +103,24 @@ final List<AdminScreenEntry> kAdminScreenRegistry = const [
     id:     'features',
     icon:   Icons.tune_outlined,
     label:  'Features',
-    screen: ScreenAdminFeatures(),
+    screen: ShellFeaturesRoot(),
   ),
 
   AdminScreenEntry(
-    id:       'preview',
-    icon:     Icons.preview_outlined,
-    label:    'Full Preview',
-    locked:   true,
-    lockNote: 'Full render preview (merge engine + live manifest) ships in Cycle 3.',
-    screen:   SizedBox.shrink(),
+    id:     'settings',
+    icon:   Icons.settings_outlined,
+    label:  'Settings',
+    screen: ShellSettingsRoot(),
+    // Not registry-locked — ShellSettingsRoot handles its own stub state
+    // based on QAdminConfig.accessFor('settings').locked at runtime.
   ),
 
-  // ── Template for adding a new screen ─────────────────────────────────────
-  // 1. Create: space_admin/screens/screen_admin_<name>.dart
-  // 2. Import it above
-  // 3. Add an entry like this:
-  //
+  // ── Template ─────────────────────────────────────────────────────────────
   // AdminScreenEntry(
-  //   id:    '<name>',
-  //   icon:  Icons.<relevant_icon>,
-  //   label: '<Label>',
-  //   screen: ScreenAdmin<Name>(),
+  //   id:     '<n>',
+  //   icon:   Icons.<icon>,
+  //   label:  '<Label>',
+  //   screen: Shell<N>Root(),
   // ),
 
 ];
