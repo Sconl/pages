@@ -7,111 +7,149 @@
 //   v1.1.0 — Added kQSpaceAuthConfig and kQSpaceRouterConfig.
 //   v1.1.1 — Fixed: QRole undefined — added import for auth_session.dart.
 //             Fixed: adapter imports updated to lib/core/auth/auth_adapters/.
-//   v1.2.0 — Added kQSpaceAdminConfig — the QSpace admin system config.
-//             Renders the admin system with QSpace-specific portal access rules,
-//             dev mode enabled (architect tier, all built portals editable),
-//             and matching portal ids to kAdminScreenRegistry entries.
+//   v1.2.0 — Added kQSpaceAdminConfig — QSpace admin system config.
+//             Portal access rules, dev mode, and registry id mapping.
+//   v1.3.0 — Merged AppClientConfig pattern (Session 3).
+//             Added kQSpaceSocialConfig, kQSpaceBiometricConfig.
+//             Added kQSpaceClientConfig as master composed config object.
+//             Updated kQSpaceAuthConfig to three-tier (User/Admin/Developer).
+//             AuthAdapterType moved to lib/core/config/app_client_config.dart.
+//             kDefaultTenantId made private (_kDefaultTenantId) — consumed via
+//             kQSpaceClientConfig.defaultTenantId everywhere outside this file.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// WIRING:
-//   In main.dart (or AppRoot):
-//     QAdminShell(config: kQSpaceAdminConfig)
+// THIS IS THE SINGLE FILE TO CHANGE PER DEPLOYMENT.
 //
-//   The shell wraps QAdminConfigScope internally, so all portals automatically
-//   read the right access rules without any further prop drilling.
+// Everything project-specific — auth behavior, social providers, biometric
+// settings, admin portal access, routing extras, and backend URLs — lives here.
+// Nothing in lib/core/, lib/spaces/, or lib/interface/ needs to change per project.
+//
+// To add a new project:
+//   1. Create lib/client/{project}/client_config.dart
+//   2. Define a final k{Project}ClientConfig = AppClientConfig(...)
+//   3. Create main_{project}.dart → runApp(AppRoot(config: k{Project}ClientConfig))
+//   4. Done. Zero core changes.
 
-import '../../core/auth/auth_session.dart';      // QRole enum
-import '../../core/auth/auth_config.dart';        // QAuthConfig, AuthUserClass
-import '../../core/router/router_config.dart';    // QRouterConfig
-import '../../core/admin/admin_config.dart';      // QAdminConfig, AdminPortalAccess
+import '../../core/auth/auth_session.dart';        // QRole enum
+import '../../core/auth/auth_config.dart';          // QAuthConfig, AuthUserClass, QSocialAuthConfig, QBiometricConfig
+import '../../core/auth/social_auth_port.dart';     // SocialAuthProvider enum
+import '../../core/admin/admin_config.dart';        // QAdminConfig, AdminPortalAccess
+import '../../core/config/app_client_config.dart';  // AppClientConfig, AuthAdapterType
+import '../../core/router/router_config.dart';      // QRouterConfig
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adapter selection
+// CONFIG BLOCK — change these values per deployment
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum AuthAdapterType { restJwt, firebase }
-
-const kAuthAdapterType = AuthAdapterType.restJwt;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// API / Tenant
-// ─────────────────────────────────────────────────────────────────────────────
-
-const kApiBaseUrl = String.fromEnvironment(
+// Override at build time:
+//   flutter build web --dart-define=API_BASE_URL=https://api.qspace.co
+const _kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://localhost:3000',
 );
 
-const kDefaultTenantId = String.fromEnvironment(
+// Override at build time:
+//   flutter build web --dart-define=TENANT_ID=qspace-prod
+const _kDefaultTenantId = String.fromEnvironment(
   'TENANT_ID',
   defaultValue: 'qspace-dev',
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Auth config — QSpace client
+// Auth config — UI behavior, role toggle, copy, post-login routing
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Three-tier toggle: User / Admin / Developer.
+// To hide the toggle entirely: showRoleToggle: false (or use kAuthConfigSingleUser).
+// To add a fourth tier (e.g. Architect): add another AuthUserClass entry.
 const kQSpaceAuthConfig = QAuthConfig(
-  tenantId: kDefaultTenantId,
+  tenantId: _kDefaultTenantId,
   userClasses: [
-    AuthUserClass(id: 'user',  label: 'User',          role: QRole.user),
-    AuthUserClass(id: 'admin', label: 'Administrator',  role: QRole.clientAdmin),
+    AuthUserClass(id: 'user',  label: 'User',       role: QRole.user),
+    AuthUserClass(id: 'admin', label: 'Admin',       role: QRole.clientAdmin),
+    AuthUserClass(id: 'dev',   label: 'Developer',   role: QRole.developer),
   ],
+  showRoleToggle:   true,
   loginHeading:     'Welcome back',
   loginSubheading:  'Sign in to your QSpace account',
   signupHeading:    'Get started',
   signupSubheading: 'Create your QSpace account',
+  allowSignup:        true,
+  allowPasswordReset: true,
   postLoginRoutes: {
     'user':  '/',
     'admin': '/admin',
+    'dev':   '/admin',
   },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Router config — QSpace client
+// Social config — which social providers to offer
 // ─────────────────────────────────────────────────────────────────────────────
 
-const kQSpaceRouterConfig = QRouterConfig(
-  initialLocation: '/',
-  // extraRoutes: [GoRoute(path: '/onboarding', builder: ...)],
+// Currently disabled. To enable:
+//   1. Set enabled: true
+//   2. Add required packages (google_sign_in, sign_in_with_apple) to pubspec.yaml
+//   3. Pass a real SocialAuthPort via kQSpaceClientConfig.socialAdapter below
+//   4. Uncomment the OAuth code in the relevant firebase_social_provider.dart method
+const kQSpaceSocialConfig = QSocialAuthConfig(
+  enabled: false, // flip to true when social adapters are fully wired
+  providers: [
+    SocialAuthProvider.google,
+    SocialAuthProvider.apple,
+    SocialAuthProvider.github,
+  ],
+  dividerLabel: 'Or continue with',
+  showOnLogin:  true,
+  showOnSignup: true,
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Admin config — QSpace client
+// Biometric config — device biometric sign-in
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Currently disabled. To enable:
+//   1. Set enabled: true
+//   2. Add local_auth: ^2.2.0 to pubspec.yaml
+//   3. Add permissions to AndroidManifest.xml + Info.plist (see local_biometric_provider.dart)
+//   4. Pass LocalBiometricProvider() via kQSpaceClientConfig.biometricAdapter below
+//   5. Uncomment the LocalAuthentication code in local_biometric_provider.dart
+const kQSpaceBiometricConfig = QBiometricConfig(
+  enabled:       false, // flip to true when local_auth is configured
+  promptMessage: 'Authenticate to sign in to QSpace',
+  cancelLabel:   'Cancel',
+  buttonLabel:   'Use biometrics',
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin config — portal access rules, dev mode, registry key mapping
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Portal id keys MUST match AdminScreenEntry.id values in kAdminScreenRegistry.
-// Any portal id not listed here is hidden by default (fail-safe).
+// Any portal id not listed here defaults to hidden (fail-safe).
 //
-// devModeEnabled = true → shows DEV MODE badge in sidebar, uses devDisplayName/
-//   devEmail/devRoleLabel instead of live session values.
-//   Set to false (or switch to kAdminConfigClientAdmin) before production deploy.
-//
-// TODO(auth): once QAuthSession is wired into the shell, set devModeEnabled=false
-// and let the shell read displayName/email/role from the session directly.
-
+// devModeEnabled: true — shows DEV MODE badge, uses dev* fields instead of
+//   live session values. Set false before shipping to production.
+//   TODO(auth): once QAuthSession is wired into the shell, set devModeEnabled=false.
 const kQSpaceAdminConfig = QAdminConfig(
-  tenantId:     kDefaultTenantId,
+  tenantId:     _kDefaultTenantId,
   adminTitle:   'QSpace Admin',
   versionLabel: 'QSpace Pages v2.2.0',
 
-  // Dev mode — architect tier has full write access to all implemented portals.
   devModeEnabled: true,
   devDisplayName: 'Dev Admin',
   devEmail:       'dev@qspace.local',
   devRoleLabel:   'architect',
 
   portalAccess: {
-
-    // Dashboard — always read-only. No write ops exist here.
+    // Dashboard — always read-only. No write operations exist here.
     'dashboard': AdminPortalAccess.readOnly(),
 
-    // Brand — fully editable in dev. Generates brand_config.dart snippets.
+    // Brand — fully editable. Generates brand_config.dart snippets.
     // In production (Cycle 3): AdminConfigProvider.publish() writes overlay.json.
     'brand': AdminPortalAccess(enabled: true, editable: true),
 
     // Content — not built yet. Registry also marks this locked=true.
-    // Both gates must be false for the portal to be accessible.
     'content': AdminPortalAccess.comingSoon(
       'Content editing ships in Cycle 3 alongside the merge engine '
       'and sub-space keying support.',
@@ -125,12 +163,51 @@ const kQSpaceAdminConfig = QAdminConfig(
     // Features — fully editable. Controls space_dev screen toggles.
     'features': AdminPortalAccess(enabled: true, editable: true),
 
-    // Settings — portal is wired but content not built. Config-level lock
-    // so individual tenants can unlock it independently of the registry.
+    // Settings — portal shell wired, content not built yet.
     'settings': AdminPortalAccess.comingSoon(
       'Settings management ships in Cycle 3. '
       'The portal shell is already wired — content is next.',
     ),
-
   },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Router config — extra routes and redirect rules for QSpace
+// ─────────────────────────────────────────────────────────────────────────────
+
+const kQSpaceRouterConfig = QRouterConfig(
+  initialLocation: '/',
+  // extraRoutes: [GoRoute(path: '/onboarding', builder: ...)],
+  // extraRedirect: (session, location) { ... },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// kQSpaceClientConfig — THE MASTER CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// This is the single object passed to AppRoot. Everything the QSpace deployment
+// needs is captured here. main.dart and main_qspace.dart both use this.
+//
+// To enable social login:
+//   socialAdapter: FirebaseSocialProvider(defaultTenantId: _kDefaultTenantId),
+//   AND set kQSpaceSocialConfig.enabled: true above.
+//
+// To enable biometric:
+//   biometricAdapter: LocalBiometricProvider(),
+//   AND set kQSpaceBiometricConfig.enabled: true above.
+//
+// To switch auth backend from REST to Firebase:
+//   adapterType: AuthAdapterType.firebase,
+//   AND ensure firebase_core + firebase_auth are in pubspec.yaml.
+
+final kQSpaceClientConfig = AppClientConfig(
+  adapterType:     AuthAdapterType.restJwt,
+  apiBaseUrl:      _kApiBaseUrl,
+  defaultTenantId: _kDefaultTenantId,
+  auth:            kQSpaceAuthConfig,
+  social:          kQSpaceSocialConfig,
+  biometric:       kQSpaceBiometricConfig,
+  router:          kQSpaceRouterConfig,
+  // socialAdapter:    FirebaseSocialProvider(defaultTenantId: _kDefaultTenantId),
+  // biometricAdapter: LocalBiometricProvider(),
 );

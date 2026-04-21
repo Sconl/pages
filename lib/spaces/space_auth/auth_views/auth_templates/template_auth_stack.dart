@@ -3,14 +3,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial. Single-column stacked arrangement. Default template.
-//             Fills available height via ConstrainedBox(minHeight) so the
-//             column distributes space evenly without scrolling on most devices.
-//             SingleChildScrollView activates gracefully when the keyboard appears.
+//   v1.0.0 — Initial. Single column layout. Default template.
+//   v2.0.0 — Wires social section between actions and bottomLink.
+//             Social appears below the submit button with its own divider
+//             (handled inside SectionAuthSocial itself).
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// What lives here: how pre-built sections are arranged vertically.
-// What does NOT live here: section content, auth logic, config decisions.
 
 import 'package:flutter/material.dart';
 
@@ -22,28 +19,24 @@ import '../layout_auth_registry.dart';
 // CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _kFormMaxWidth  = 400.0;
-const _kFormPaddingH  = 32.0;
+const _kFormMaxWidth = 400.0;
+const _kFormPaddingH = 32.0;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// templateAuthStack — top-level function matching AuthTemplateBuilder typedef
+// templateAuthStack
 // ─────────────────────────────────────────────────────────────────────────────
 
 Widget templateAuthStack({
-  required AuthMode            mode,
+  required AuthMode             mode,
   required AuthTemplateSections sections,
-}) {
-  return _TemplateAuthStack(mode: mode, sections: sections);
-}
+}) =>
+    _TemplateAuthStack(mode: mode, sections: sections);
 
 class _TemplateAuthStack extends StatelessWidget {
   final AuthMode             mode;
   final AuthTemplateSections sections;
 
-  const _TemplateAuthStack({
-    required this.mode,
-    required this.sections,
-  });
+  const _TemplateAuthStack({required this.mode, required this.sections});
 
   @override
   Widget build(BuildContext context) {
@@ -54,12 +47,10 @@ class _TemplateAuthStack extends StatelessWidget {
 
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: _kFormMaxWidth),
+        constraints: const BoxConstraints(maxWidth: _kFormMaxWidth),
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           child: ConstrainedBox(
-            // minHeight fills the screen when content is short — keeps
-            // spaceBetween from collapsing to content height on tall screens.
             constraints: BoxConstraints(minHeight: availableHeight),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: _kFormPaddingH),
@@ -73,7 +64,7 @@ class _TemplateAuthStack extends StatelessWidget {
                     child: sections.header ?? const SizedBox.shrink(),
                   ),
 
-                  // ── Middle: roles + form + help + actions ────────────────
+                  // ── Middle: roles + form + help + actions + social ───────
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -90,6 +81,9 @@ class _TemplateAuthStack extends StatelessWidget {
                       SizedBox(height: AppSpacing.sm),
                       if (sections.actions != null)
                         sections.actions!,
+                      // Social appears below the main CTA, inside its own divider
+                      if (sections.social != null)
+                        sections.social!,
                     ],
                   ),
 
@@ -100,7 +94,7 @@ class _TemplateAuthStack extends StatelessWidget {
                       children: [
                         if (sections.bottomLink != null) ...[
                           SizedBox(height: AppSpacing.lg),
-                          const WidgetAuthDividerInline(),
+                          const _BottomDivider(),
                           SizedBox(height: AppSpacing.md),
                           sections.bottomLink!,
                         ],
@@ -117,10 +111,8 @@ class _TemplateAuthStack extends StatelessWidget {
   }
 }
 
-// Small inline alias so the template can use the divider without importing
-// auth_widgets directly. The template only arranges — but it can use style tokens.
-class WidgetAuthDividerInline extends StatelessWidget {
-  const WidgetAuthDividerInline();
+class _BottomDivider extends StatelessWidget {
+  const _BottomDivider();
   @override
   Widget build(BuildContext context) {
     return Row(

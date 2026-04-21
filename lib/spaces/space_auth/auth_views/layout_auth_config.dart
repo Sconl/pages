@@ -4,39 +4,37 @@
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. AuthMode, AuthLayoutVariant, AuthSectionVisibility,
-//             AuthLayoutConfig. Pure config — no imports, no UI, no providers.
+//             AuthLayoutConfig.
+//   v2.0.0 — Added social and biometric fields to AuthSectionVisibility.
+//             AuthLayoutConfig.forMode() gains showSocial + showBiometric params.
+//             Social shown on login + signup. Biometric on login only.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// What lives here: existence and arrangement intent — what should be present.
-// What does NOT live here: how anything is drawn, any auth logic, any state.
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthMode — which auth flow is active
+// AuthMode
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum AuthMode { login, signup, reset }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthLayoutVariant — which template to render
+// AuthLayoutVariant
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum AuthLayoutVariant {
-  stack,  // single column — default
-  split,  // two-panel (branding + form)
-  card,   // centered card container
-}
+enum AuthLayoutVariant { stack, split, card }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthSectionVisibility — which sections the template should include
+// AuthSectionVisibility
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AuthSectionVisibility {
-  final bool header;     // logo + heading + subheading
-  final bool roles;      // user class / role toggle
-  final bool form;       // credential input fields
-  final bool help;       // forgot password link + error message
-  final bool actions;    // submit button
-  final bool bottomLink; // signup / login / back link
+  final bool header;
+  final bool roles;
+  final bool form;
+  final bool help;
+  final bool actions;
+  final bool social;     // social login button row
+  final bool biometric;  // biometric button (login only)
+  final bool bottomLink;
 
   const AuthSectionVisibility({
     this.header     = true,
@@ -44,16 +42,18 @@ class AuthSectionVisibility {
     this.form       = true,
     this.help       = true,
     this.actions    = true,
+    this.social     = false,
+    this.biometric  = false,
     this.bottomLink = true,
   });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthLayoutConfig — the full config for one auth screen render
+// AuthLayoutConfig
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AuthLayoutConfig {
-  final AuthLayoutVariant variant;
+  final AuthLayoutVariant  variant;
   final AuthSectionVisibility sections;
 
   const AuthLayoutConfig({
@@ -61,48 +61,54 @@ class AuthLayoutConfig {
     required this.sections,
   });
 
-  // Sensible defaults per mode. ShellAuthRoot calls this.
-  // showRoles is driven by QAuthConfig.isToggleVisible, not hardcoded here.
   static AuthLayoutConfig forMode(
     AuthMode mode, {
-    AuthLayoutVariant variant = AuthLayoutVariant.stack,
-    bool showRoles = false,
+    AuthLayoutVariant variant     = AuthLayoutVariant.stack,
+    bool              showRoles   = false,
+    bool              showSocial  = false,
+    bool              showBiometric = false,
   }) {
     switch (mode) {
       case AuthMode.login:
         return AuthLayoutConfig(
-          variant:  variant,
+          variant: variant,
           sections: AuthSectionVisibility(
             header:     true,
             roles:      showRoles,
             form:       true,
-            help:       true,   // shows forgot password + errors
+            help:       true,
             actions:    true,
-            bottomLink: true,   // sign up link
+            social:     showSocial,
+            biometric:  showBiometric, // only on login
+            bottomLink: true,
           ),
         );
       case AuthMode.signup:
         return AuthLayoutConfig(
-          variant:  variant,
+          variant: variant,
           sections: AuthSectionVisibility(
             header:     true,
             roles:      showRoles,
             form:       true,
-            help:       false,  // no forgot password on signup
+            help:       false,
             actions:    true,
-            bottomLink: true,   // log in link
+            social:     showSocial,
+            biometric:  false, // never on signup
+            bottomLink: true,
           ),
         );
       case AuthMode.reset:
         return AuthLayoutConfig(
-          variant:  variant,
+          variant: variant,
           sections: AuthSectionVisibility(
             header:     true,
             roles:      false,
             form:       true,
             help:       false,
             actions:    true,
-            bottomLink: true,   // back to login link
+            social:     false, // never on reset
+            biometric:  false,
+            bottomLink: true,
           ),
         );
     }

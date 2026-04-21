@@ -15,7 +15,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/style/app_style.dart';
 import '../../../../core/admin/admin_brand_draft.dart';
 import '../../../../core/admin/admin_config.dart';
-import '../../widgets/admin_preview_panel.dart';
+import '../../admin_views/admin_widgets/admin_preview_panel.dart';
 import 'layout_brand_config.dart';
 import 'layout_brand_registry.dart';
 

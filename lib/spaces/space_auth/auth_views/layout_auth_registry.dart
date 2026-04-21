@@ -3,13 +3,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
-//   v1.0.0 — Initial. Translator/factory layer — maps AuthLayoutVariant to the
-//             correct template builder function. ShellAuthRoot stays generic;
-//             template choices evolve here without touching the shell.
+//   v1.0.0 — Initial. Registry mapping variants to template builders.
+//   v2.0.0 — Added social field to AuthTemplateSections.
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// What lives here: the mapping from layout choice to template.
-// What does NOT live here: layout policy, UI styling, section content, auth logic.
 
 import 'package:flutter/widgets.dart';
 
@@ -19,8 +15,7 @@ import 'auth_templates/template_auth_split.dart';
 import 'auth_templates/template_auth_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AuthTemplateSections — pre-built section widgets passed to a template.
-// Templates arrange these; they do not build them.
+// AuthTemplateSections — pre-built section widgets passed to a template
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AuthTemplateSections {
@@ -29,6 +24,7 @@ class AuthTemplateSections {
   final Widget? form;
   final Widget? help;
   final Widget? actions;
+  final Widget? social;      // social login section — after actions
   final Widget? bottomLink;
 
   const AuthTemplateSections({
@@ -37,6 +33,7 @@ class AuthTemplateSections {
     this.form,
     this.help,
     this.actions,
+    this.social,
     this.bottomLink,
   });
 }
@@ -51,19 +48,14 @@ typedef AuthTemplateBuilder = Widget Function({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// authLayoutRegistry — the map
+// authLayoutRegistry
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Adding a new template = add one entry here. Nothing else changes.
 final Map<AuthLayoutVariant, AuthTemplateBuilder> authLayoutRegistry = {
   AuthLayoutVariant.stack: templateAuthStack,
   AuthLayoutVariant.split: templateAuthSplit,
   AuthLayoutVariant.card:  templateAuthCard,
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// resolveTemplate — convenience lookup with stack fallback
-// ─────────────────────────────────────────────────────────────────────────────
 
 AuthTemplateBuilder resolveTemplate(AuthLayoutVariant variant) =>
     authLayoutRegistry[variant] ?? templateAuthStack;

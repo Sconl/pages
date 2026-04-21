@@ -4,39 +4,35 @@
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
 //   v1.0.0 — Initial. QSpace-specific entry point.
-//             Passes kQSpaceAuthConfig and kQSpaceRouterConfig to AppRoot.
-//             main.dart stays as the universal entry that uses AppRoot defaults.
+//   v1.1.0 — Migrated to AppClientConfig pattern. Replaced flat authConfig +
+//             routerConfig params with config: kQSpaceClientConfig.
+//             _initAdapter reads adapterType from config — kAuthAdapterType
+//             and AuthAdapterType are no longer public constants in client_config.
+//             Added import for app_client_config.dart (AuthAdapterType enum).
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Entry point pattern — why multiple main_*.dart files:
+// Explicit QSpace production entry point.
+// main.dart is the universal entry — this file exists for clarity and to allow
+// per-entry --dart-define overrides at build time.
 //
-//   main.dart           → universal entry, uses AppRoot's default params (QSpace defaults)
-//   main_qspace.dart    → explicit QSpace production entry — same config, more explicit
-//   main_dev.dart       → development: kAuthConfigDeveloper + initial route /admin
-//   main_acme.dart      → Acme Corp client: their own client_config + auth config
-//
-// To run a specific entry:
+// To run:
 //   flutter run -t main_qspace.dart
 //   flutter build web -t main_qspace.dart --dart-define=API_BASE_URL=https://api.qspace.co
-//
-// Each entry is a thin wrapper — all logic lives in AppRoot, client_config, and auth_config.
 
 import 'package:flutter/material.dart';
 
 import 'client/qspace/client_config.dart';
+import 'core/config/app_client_config.dart';
 import 'interface/app_root.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _initAdapter();
-  runApp(const AppRoot(
-    authConfig:   kQSpaceAuthConfig,
-    routerConfig: kQSpaceRouterConfig,
-  ));
+  await _initAdapter(kQSpaceClientConfig);
+  runApp(AppRoot(config: kQSpaceClientConfig));
 }
 
-Future<void> _initAdapter() async {
-  switch (kAuthAdapterType) {
+Future<void> _initAdapter(AppClientConfig config) async {
+  switch (config.adapterType) {
     case AuthAdapterType.firebase:
       // Uncomment when Firebase adapter is active:
       // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

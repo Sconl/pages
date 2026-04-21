@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/style/app_style.dart';
-import '../../widgets/admin_preview_panel.dart';
+import '../../admin_views/admin_widgets/admin_preview_panel.dart';
 import 'layout_features_config.dart';
 import 'layout_features_registry.dart';
 
