@@ -11,6 +11,8 @@
 //             Removed unused/redundant imports. Removed dead ?? fallbacks.
 //   v1.2.2 — Fixed: restored router_config.dart import — routerConfigProvider
 //             is defined there, not re-exported via auth_riverpod.dart.
+//   v1.2.3 — Updated child: QPagesApp() → AppShell() following file rename
+//             qpages_app.dart → app_shell.dart.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -23,7 +25,7 @@ import '../core/auth/auth_adapters/rest_jwt_auth_provider.dart';
 // import '../core/auth/auth_adapters/biometric/stub_biometric_provider.dart';
 import '../core/router/router_config.dart';
 import '../spaces/space_auth/auth_state/auth_riverpod.dart';
-import 'qpages_app.dart';
+import 'app_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AppRoot
@@ -50,7 +52,7 @@ class AppRoot extends StatelessWidget {
         tenantIdProvider.overrideWithValue(config.defaultTenantId),
         routerConfigProvider.overrideWithValue(config.router),
       ],
-      child: const QPagesApp(),
+      child: const AppShell(),
     );
   }
 

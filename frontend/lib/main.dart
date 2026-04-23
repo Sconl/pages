@@ -12,6 +12,8 @@
 //             _initAdapter reads adapterType from kQSpaceClientConfig instead of
 //             the removed public kAuthAdapterType constant.
 //             Added import for app_client_config.dart (AuthAdapterType enum).
+//   v1.4.0 — No code changes. QPagesApp renamed to AppShell (app_shell.dart).
+//             main.dart is unaffected — it only references AppRoot, not AppShell.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // main.dart does three things and nothing else:
@@ -23,7 +25,7 @@ import 'package:flutter/material.dart';
 
 import 'client/qspace/client_config.dart';
 import 'core/config/app_client_config.dart';
-import 'interface/app_root.dart';
+import 'app/app_root.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

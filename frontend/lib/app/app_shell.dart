@@ -1,4 +1,4 @@
-// lib/interface/qpages_app.dart
+// lib/interface/app_shell.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
@@ -6,6 +6,8 @@
 //   v1.0.0 — Initial. QPagesApp root widget.
 //             Moved out of main.dart. Uses MaterialApp.router + GoRouter.
 //             BrandScope wraps the entire app so all widgets inherit brand tokens.
+//   v1.1.0 — Renamed file qpages_app.dart → app_shell.dart.
+//             Renamed class QPagesApp → AppShell.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // This is the root of the Flutter widget tree, below ProviderScope (app_root.dart).
@@ -16,14 +18,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/style/app_style.dart';
-import 'app_router.dart';
+import '../core/router/app_router.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QPagesApp
+// AppShell
 // ─────────────────────────────────────────────────────────────────────────────
 
-class QPagesApp extends ConsumerWidget {
-  const QPagesApp({super.key});
+class AppShell extends ConsumerWidget {
+  const AppShell({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

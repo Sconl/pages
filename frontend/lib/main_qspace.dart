@@ -23,7 +23,7 @@ import 'package:flutter/material.dart';
 
 import 'client/qspace/client_config.dart';
 import 'core/config/app_client_config.dart';
-import 'interface/app_root.dart';
+import 'app/app_root.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
