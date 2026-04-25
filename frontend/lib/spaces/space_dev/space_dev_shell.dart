@@ -26,9 +26,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/style/app_style.dart';
-import '../../../core/admin/dev_screen_settings.dart';
-import '../../../qp_structure.dart';
+import '../../core/style/app_style.dart';
+import '../../core/admin/dev_screen_settings.dart';
+import '../../qp_structure.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG BLOCK
