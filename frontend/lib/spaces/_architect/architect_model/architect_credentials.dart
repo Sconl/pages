@@ -1,15 +1,18 @@
-// frontend/lib/spaces/space_architect/architect_auth/architect_credentials.dart
+// frontend/lib/spaces/space_architect/architect_model/architect_credentials.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
-//   • 2026-04-25 — Initial. Local credential validation + mock auth provider
-//                  for use inside preview windows. No backend, no JWT.
+//   • 2026-04-26 — Path corrected: space_architect_model → architect_model.
+//   • 2026-04-25 — Initial. Local credential validation + mock auth provider.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Everything here is intentionally local. Architect auth never touches the
-// network. The mock provider exists so screens that call authAdapterProvider
-// inside the preview don't crash — they just get a simulated success response.
+// Two things live here:
+//   1. validateArchitectCredentials — compares input against hardcoded dev
+//      credentials. No network, no hashing, no backend.
+//   2. ArchitectMockAuthProvider — full AuthProvider injected into the preview
+//      ProviderScope so previewed auth screens can call signIn/signUp without
+//      hitting a real backend.
 
 import '../../../core/auth/auth_provider.dart';
 import '../../../core/auth/auth_session.dart';
@@ -18,18 +21,18 @@ import '../../../core/auth/auth_session.dart';
 // CONFIG — change values here, not inline
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Credentials ───────────────────────────────────────────────────────────────
-const String kArchitectUsername = 'sconl';
+// ── Architect login credentials ───────────────────────────────────────────────
+const String kArchitectUsername  = 'sconl';
 const String _kArchitectPassword = 'architect';
 
-// ── Preview session identity ───────────────────────────────────────────────────
-// Used by ArchitectMockAuthProvider so previewed auth screens can "succeed"
+// ── Mock preview session identity ─────────────────────────────────────────────
 const String _kPreviewUserId      = 'arch-preview-001';
 const String _kPreviewEmail       = 'preview@qspace.local';
 const String _kPreviewDisplayName = 'Preview User';
 const String _kPreviewTenantId    = 'qspace-dev';
 
-// Realistic latency so loading spinners actually render during preview testing
+// Realistic latency so loading spinners actually render during preview —
+// 0ms responses make it impossible to verify the loading state visually
 const Duration kMockAuthLatency = Duration(milliseconds: 800);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,8 +43,6 @@ const Duration kMockAuthLatency = Duration(milliseconds: 800);
 // validateArchitectCredentials
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns true if the username/password match the architect credentials.
-/// Intentionally simple — this is a dev-only tool, not a security boundary.
 bool validateArchitectCredentials(String username, String password) =>
     username.trim() == kArchitectUsername && password == _kArchitectPassword;
 
@@ -49,15 +50,11 @@ bool validateArchitectCredentials(String username, String password) =>
 // ArchitectMockAuthProvider
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Injected into the preview ProviderScope so screens that call signIn/signUp
-// get a realistic success response without hitting a backend. The session
-// returned is architect-level so all role guards pass in the preview.
-//
-// Important: this provider never emits a real session stream, so GoRouter's
-// auth redirect doesn't fire inside the preview — screens stay where they are.
+// Silent sessionStream so GoRouter inside the preview never fires its redirect
+// callback — the screen stays pinned in the preview window regardless of what
+// the auth form does.
 
 class ArchitectMockAuthProvider extends AuthProvider {
-  // Keeps session stream silent so GoRouter inside the preview doesn't redirect
   @override
   Stream<QAuthSession?> get sessionStream => const Stream.empty();
 
@@ -72,15 +69,8 @@ class ArchitectMockAuthProvider extends AuthProvider {
     required String email,
     required String password,
   }) async {
-    // Fake the network round-trip so the loading spinner renders
     await Future.delayed(kMockAuthLatency);
-    return const QAuthSession(
-      userId:      _kPreviewUserId,
-      email:       _kPreviewEmail,
-      displayName: _kPreviewDisplayName,
-      tenantId:    _kPreviewTenantId,
-      role:        QRole.architect,
-    );
+    return _previewSession;
   }
 
   @override
@@ -92,26 +82,25 @@ class ArchitectMockAuthProvider extends AuthProvider {
     String? roleHint,
   }) async {
     await Future.delayed(kMockAuthLatency);
-    return const QAuthSession(
-      userId:      _kPreviewUserId,
-      email:       _kPreviewEmail,
-      displayName: _kPreviewDisplayName,
-      tenantId:    _kPreviewTenantId,
-      role:        QRole.architect,
-    );
+    return _previewSession;
   }
 
   @override
-  Future<void> signOut() async {
-    // No-op — preview sessions are stateless
-  }
+  Future<void> signOut() async {}
 
   @override
   Future<void> sendPasswordReset(String email) async {
-    // Simulate the async call so the UI can show its success state
     await Future.delayed(kMockAuthLatency);
   }
 
   @override
   Future<QAuthSession?> refreshSession() async => null;
+
+  static const QAuthSession _previewSession = QAuthSession(
+    userId:      _kPreviewUserId,
+    email:       _kPreviewEmail,
+    displayName: _kPreviewDisplayName,
+    tenantId:    _kPreviewTenantId,
+    role:        QRole.architect,
+  );
 }

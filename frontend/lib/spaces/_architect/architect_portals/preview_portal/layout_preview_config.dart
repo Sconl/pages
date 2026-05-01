@@ -1,41 +1,37 @@
-// frontend/lib/spaces/space_architect/architect_state/architect_riverpod.dart
+// frontend/lib/spaces/space_architect/architect_portals/preview_portal/layout_preview_config.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
-//   • 2026-04-25 — Initial. All Riverpod state for the architect space.
-//                  Kept minimal — architect session is local only.
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// These providers only exist inside ArchitectRoot's ProviderScope.
-// They're completely separate from the app's auth providers.
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../architect_registry/architect_screen_registry.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Session state
+//   • 2026-04-26 — Initial. Layout config for the preview portal.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// True after the architect enters the correct credentials.
-/// Everything pivots on this — login screen vs. dashboard.
-final architectIsLoggedInProvider = StateProvider<bool>((ref) => false);
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Navigation state
+// PreviewSectionVisibility
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Which space tab is active in the dashboard sidebar.
-/// Starts on the first space in the registry.
-final architectSelectedSpaceProvider = StateProvider<String>(
-  (ref) => kArchitectSpaces.isNotEmpty ? kArchitectSpaces.first.id : '',
-);
+class PreviewSectionVisibility {
+  final bool toolbar;    // back button, screen label, zoom slider, rotate toggle
+  final bool deviceBar;  // horizontal device preset selector
+  final bool canvas;     // device frame + live screen
 
-/// The screen currently open in the preview, or null if no preview is showing.
-final architectPreviewScreenProvider =
-    StateProvider<ArchitectScreenEntry?>((ref) => null);
+  const PreviewSectionVisibility({
+    this.toolbar   = true,
+    this.deviceBar = true,
+    this.canvas    = true,
+  });
+}
 
-/// The device preset currently selected inside the preview window.
-final architectPreviewDeviceProvider = StateProvider<ArchitectDevice>(
-  (ref) => ArchitectDevice.mobileM,
-);
+// ─────────────────────────────────────────────────────────────────────────────
+// PreviewLayoutConfig
+// ─────────────────────────────────────────────────────────────────────────────
+
+class PreviewLayoutConfig {
+  final PreviewSectionVisibility sections;
+
+  const PreviewLayoutConfig({required this.sections});
+
+  static const PreviewLayoutConfig standard = PreviewLayoutConfig(
+    sections: PreviewSectionVisibility(),
+  );
+}

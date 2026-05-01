@@ -3,35 +3,36 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
-//   • 2026-04-25 — Initial. Architect root widget with its own ProviderScope,
-//                  MaterialApp, and login/dashboard routing logic.
+//   • 2026-04-26 — Refactored. Now delegates login to ShellArchitectRoot and
+//                  dashboard to ShellDashboardRoot — no inline widget trees.
+//   • 2026-04-25 — Initial. Architect root with isolated ProviderScope.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// ArchitectRoot is completely isolated from AppRoot. It has its own Riverpod
-// scope, its own MaterialApp, its own routing — no shared state with the
-// production app boot path. This is intentional: the architect system must
-// never interfere with what normal users see.
+// ArchitectRoot is completely isolated from AppRoot:
+//   • Its own ProviderScope — no shared providers with the production app
+//   • Its own MaterialApp — independent theme, title, and routing
+//   • Its own AnimatedSwitcher routing — login ↔ dashboard
 //
-// The routing here is trivially simple: if logged in → dashboard, else → login.
-// No GoRouter needed. Animated crossfade transitions between the two states.
+// This is intentional: the architect system must never interfere with what
+// normal users experience, and its providers must not leak into production.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/style/app_style.dart';
-import 'architect_screens/screen_architect_login.dart';
-import 'architect_screens/screen_architect_dashboard.dart';
 import 'architect_state/architect_riverpod.dart';
+import 'architect_views/shell_architect_root.dart';
+import 'architect_portals/dashboard_portal/shell_dashboard_root.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG — change values here, not inside widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Duration _kRootTransitionDuration = Duration(milliseconds: 350);
-const String   _kAppTitle               = 'QSpace — Architect';
+const Duration _kTransitionDuration = Duration(milliseconds: 350);
+const String   _kAppTitle           = 'QSpace — Architect';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ArchitectRoot
+// END CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
 class ArchitectRoot extends StatelessWidget {
@@ -39,16 +40,15 @@ class ArchitectRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Own ProviderScope — architect providers are completely separate
-    // from the production app providers in AppRoot
+    // Fully isolated ProviderScope — architect providers never leak into AppRoot
     return ProviderScope(
       child: BrandScope(
         config: kBrandDefault,
         child: MaterialApp(
-          title:                  _kAppTitle,
+          title:                     _kAppTitle,
           debugShowCheckedModeBanner: false,
-          theme:                  AppTheme.dark,
-          home:                   const _ArchitectRouter(),
+          theme:                     AppTheme.dark,
+          home:                      const _ArchitectRouter(),
         ),
       ),
     );
@@ -56,11 +56,8 @@ class ArchitectRoot extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _ArchitectRouter
+// _ArchitectRouter — login ↔ dashboard AnimatedSwitcher
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// Watches the login state and swaps between login and dashboard with a smooth
-// crossfade. No GoRouter — overkill for a two-state internal tool.
 
 class _ArchitectRouter extends ConsumerWidget {
   const _ArchitectRouter();
@@ -70,23 +67,23 @@ class _ArchitectRouter extends ConsumerWidget {
     final isLoggedIn = ref.watch(architectIsLoggedInProvider);
 
     return AnimatedSwitcher(
-      duration:        _kRootTransitionDuration,
-      switchInCurve:   Curves.easeOut,
-      switchOutCurve:  Curves.easeIn,
+      duration:       _kTransitionDuration,
+      switchInCurve:  Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
       transitionBuilder: (child, animation) {
-        // Fade + slight upward slide on the incoming screen
         final slide = Tween<Offset>(
           begin: const Offset(0, 0.03),
           end:   Offset.zero,
         ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+
         return FadeTransition(
-          opacity:  animation,
-          child:    SlideTransition(position: slide, child: child),
+          opacity: animation,
+          child:   SlideTransition(position: slide, child: child),
         );
       },
       child: isLoggedIn
-          ? const ScreenArchitectDashboard(key: ValueKey('dashboard'))
-          : const ScreenArchitectLogin(key: ValueKey('login')),
+          ? const ShellDashboardRoot(key: ValueKey('dashboard'))
+          : const ShellArchitectRoot(key: ValueKey('login')),
     );
   }
 }
