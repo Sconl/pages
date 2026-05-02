@@ -1,7 +1,7 @@
 // frontend/lib/spaces/space_discovery/discovery_views/discovery_widgets/widget_discovery_qr_overlay.dart
 
 import 'package:flutter/material.dart';
-import 'package:qspace_pages/core/style/app_style.dart';
+// import 'package:qspace_pages/core/style/app_style.dart';
 
 /// QR scan viewfinder overlay — the visual guide drawn on top of the camera.
 /// A translucent border with a transparent centred square.

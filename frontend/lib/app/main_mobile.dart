@@ -35,7 +35,7 @@ import 'package:flutter/material.dart';
 
 import 'app_root.dart';
 import '../client/qspace/client_config.dart';
-import '../core/config/app_client_config.dart';    // AppClientConfig, AuthAdapterType
+// import '../core/config/app_client_config.dart';    // AppClientConfig, AuthAdapterType
 import '../core/config/app_mobile_config.dart';    // kQSpaceMobileConfig
 
 void main() async {

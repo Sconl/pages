@@ -39,7 +39,7 @@
 //                 the loading template and calls the resolution API.
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+// import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,7 +47,7 @@ import 'package:go_router/go_router.dart';
 import '../core/style/app_style.dart';
 import '../core/router/app_router.dart';
 import '../core/config/app_client_config.dart';
-import '../core/config/app_mobile_config.dart';
+// import '../core/config/app_mobile_config.dart';
 import '../spaces/space_discovery/discovery_model/model_discovery_deeplink.dart';
 import '../spaces/space_discovery/discovery_state/state_discovery_providers.dart';
 
