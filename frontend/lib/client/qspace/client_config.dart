@@ -16,6 +16,8 @@
 //             AuthAdapterType moved to lib/core/config/app_client_config.dart.
 //             kDefaultTenantId made private (_kDefaultTenantId) — consumed via
 //             kQSpaceClientConfig.defaultTenantId everywhere outside this file.
+//   v1.4.0 — Added 'publisher' portal access entry to kQSpaceAdminConfig.
+//             Matches AdminScreenEntry id in kAdminScreenRegistry.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // THIS IS THE SINGLE FILE TO CHANGE PER DEPLOYMENT.
@@ -162,6 +164,9 @@ const kQSpaceAdminConfig = QAdminConfig(
 
     // Features — fully editable. Controls space_dev screen toggles.
     'features': AdminPortalAccess(enabled: true, editable: true),
+
+    // Publisher — fully editable. Manages web, app, and desktop publishing.
+    'publisher': AdminPortalAccess(enabled: true, editable: true),
 
     // Settings — portal shell wired, content not built yet.
     'settings': AdminPortalAccess.comingSoon(

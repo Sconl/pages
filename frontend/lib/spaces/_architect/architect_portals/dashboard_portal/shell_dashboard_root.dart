@@ -1,27 +1,22 @@
-// frontend/lib/spaces/space_architect/architect_portals/dashboard_portal/shell_dashboard_root.dart
+// frontend/lib/spaces/_architect/architect_portals/dashboard_portal/shell_dashboard_root.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
-//   • 2026-04-26 — Initial. Dashboard portal shell. Owns space selection and
-//                  preview navigation. Delegates layout to sections.
+//   • 2026-04-27 — Import changed to architect_auto_registry so the sidebar
+//                  and grid use the assembled kArchitectSpaces list.
+//   • 2026-04-26 — Initial. Dashboard portal shell.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// SCRTSC: Shell → Config → Registry → (Template) → Sections → Widgets.
-//
-// The dashboard has a fixed two-column layout (sidebar | grid) rather than
-// a swappable template — the visual structure is stable and there's no need
-// for layout variants at this stage. The SCRTSC pattern is still respected:
-// config controls visibility, sections own their internal composition, widgets
-// are the atomic pieces inside sections.
-//
-// Navigating to the preview portal is handled here — this shell pushes the
-// preview route onto the Navigator and sets the default device preset.
+// SCRTSC: Shell → Config → Registry → Sections → Widgets.
+// Two-column fixed layout: sidebar (collapsible) | grid.
+// All navigation to the preview portal is initiated here.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/style/app_style.dart';
+import '../../architect_model/architect_auto_registry.dart';
 import '../../architect_model/architect_screen_registry.dart';
 import '../../architect_state/architect_riverpod.dart';
 import 'layout_dashboard_config.dart';
@@ -35,7 +30,6 @@ class ShellDashboardRoot extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Config — visibility switches for sections
     const config = DashboardLayoutConfig.standard;
     final vis    = config.sections;
 
@@ -84,7 +78,6 @@ class ShellDashboardRoot extends ConsumerWidget {
     WidgetRef ref,
     ArchitectScreenEntry entry,
   ) {
-    // Set the default device for this screen type before opening
     ref.read(architectPreviewDeviceProvider.notifier).state = entry.defaultDevice;
 
     Navigator.of(context).push(
@@ -93,13 +86,10 @@ class ShellDashboardRoot extends ConsumerWidget {
         transitionDuration:        AppDurations.normal,
         reverseTransitionDuration: AppDurations.normal,
         transitionsBuilder: (_, animation, __, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve:  Curves.easeOut,
-          );
+          final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
           return FadeTransition(
             opacity: curved,
-            child: SlideTransition(
+            child:   SlideTransition(
               position: Tween<Offset>(
                 begin: const Offset(0, 0.03),
                 end:   Offset.zero,

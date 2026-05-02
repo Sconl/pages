@@ -49,6 +49,16 @@ dependencies:
   dio: ^5.0.0
   shared_preferences: ^2.0.0
 
+  # Deep link handling — detects qpages://t/{tenantId} and https://qpages.io/app/{tenantId}
+  app_links: ^6.1.0
+
+  # QR code generation — renders tenant deep link as scannable QR in publisher_portal
+  qr_flutter: ^4.1.0
+
+  # URL launcher — opens Play Store links, share URLs
+  url_launcher: ^6.3.0
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -59,6 +69,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  # App icon generation — generates all Android icon sizes from one source image
+  flutter_launcher_icons: ^0.14.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -101,3 +113,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+
+# frontend/pubspec.yaml — add at bottom
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+  web:
+    generate: false  # Web uses its own favicon — do not overwrite

@@ -7,6 +7,9 @@
 //   v1.1.0 — Refactored to portal architecture. Imports point to portal shells.
 //             screen_admin/ folder replaced by admin_portals/. Registry entries
 //             carry ids matching QAdminConfig.portalAccess keys.
+//   v1.2.0 — Added 'publisher' portal entry (ShellPublisherRoot).
+//             AdminScreenEntry extended with optional activeIcon, route,
+//             and description fields to support publisher portal metadata.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // HOW TO ADD A NEW PORTAL:
@@ -23,6 +26,7 @@ import '../../spaces/space_admin/admin_portals/dashboard_portal/shell_dashboard_
 import '../../spaces/space_admin/admin_portals/brand_portal/shell_brand_root.dart';
 import '../../spaces/space_admin/admin_portals/features_portal/shell_features_root.dart';
 import '../../spaces/space_admin/admin_portals/settings_portal/shell_settings_root.dart';
+import '../../spaces/space_admin/admin_portals/publisher_portal/shell_publisher_root.dart';
 // Add portal shells as they're built:
 // import '../../spaces/space_admin/admin_portals/content_portal/shell_content_root.dart';
 // import '../../spaces/space_admin/admin_portals/assets_portal/shell_assets_root.dart';
@@ -39,18 +43,24 @@ import '../../spaces/space_admin/admin_portals/settings_portal/shell_settings_ro
 
 @immutable
 class AdminScreenEntry {
-  final String   id;       // matches QAdminConfig.portalAccess key
-  final IconData icon;
-  final String   label;
-  final Widget   screen;   // the portal shell widget
-  final bool     locked;   // registry-level lock (not built yet)
-  final String?  lockNote;
+  final String    id;          // matches QAdminConfig.portalAccess key
+  final IconData  icon;
+  final IconData? activeIcon;  // optional filled/rounded variant for selected state
+  final String    label;
+  final String?   description; // optional tooltip / subtitle copy
+  final String?   route;       // optional explicit route path (used by publisher etc.)
+  final Widget    screen;      // the portal shell widget
+  final bool      locked;      // registry-level lock (not built yet)
+  final String?   lockNote;
 
   const AdminScreenEntry({
     required this.id,
     required this.icon,
     required this.label,
     required this.screen,
+    this.activeIcon,
+    this.description,
+    this.route,
     this.locked   = false,
     this.lockNote,
   });
@@ -107,6 +117,16 @@ final List<AdminScreenEntry> kAdminScreenRegistry = const [
   ),
 
   AdminScreenEntry(
+    id:          'publisher',
+    icon:        Icons.rocket_launch_outlined,
+    activeIcon:  Icons.rocket_launch_rounded,
+    label:       'Publishing',
+    description: 'Manage your web, app, and desktop publishing',
+    route:       '/admin/publisher',
+    screen:      ShellPublisherRoot(),
+  ),
+
+  AdminScreenEntry(
     id:     'settings',
     icon:   Icons.settings_outlined,
     label:  'Settings',
@@ -117,10 +137,13 @@ final List<AdminScreenEntry> kAdminScreenRegistry = const [
 
   // ── Template ─────────────────────────────────────────────────────────────
   // AdminScreenEntry(
-  //   id:     '<n>',
-  //   icon:   Icons.<icon>,
-  //   label:  '<Label>',
-  //   screen: Shell<N>Root(),
+  //   id:          '<n>',
+  //   icon:        Icons.<icon>,
+  //   activeIcon:  Icons.<icon_filled>,
+  //   label:       '<Label>',
+  //   description: '<Short description>',
+  //   route:       '/admin/<n>',
+  //   screen:      Shell<N>Root(),
   // ),
 
 ];

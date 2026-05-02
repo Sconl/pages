@@ -14,29 +14,55 @@
 //   v1.2.0 — Updated to ShellAuthRoot(mode: AuthMode.*) replacing individual
 //             screen_*.dart files.
 //   v1.2.1 — Fixed admin shell import path: shell/ → shell_admin/.
-//   v1.2.2 — Fixed all broken imports after auth space refactor:
-//               - auth_views/shell_auth_root.dart  (was auth_views/ directory — malformed)
-//               - auth_views/layout_auth_config.dart  (AuthMode lives here)
-//               - auth_state/auth_riverpod.dart  (was state/ — old path)
-//               - removed stale screen_signup/screen_reset imports (files deleted)
+//   v1.2.2 — Fixed all broken imports after auth space refactor.
 //             Added import for kQSpaceAdminConfig from client_config.dart.
 //             Fixed (_, __) / (_, _, ___) → (_, _) unnecessary_underscores lint.
+//   v1.3.0 — Added '/admin/publisher' route (ShellPublisherRoot).
+//             Added '/discovery' and '/discovery/scan' routes (mobile-only).
+//             Added mobile initial location: reads isMobileAppProvider —
+//               native mobile starts at /discovery, web starts at routerConfig default.
+//   v1.3.1 — Fixed: replaced ScreenDiscoveryHome/Scan/Loading (wrong class names
+//               and paths) with ShellDiscoveryRoot and TemplateDiscoveryScan.
+//             Fixed: discovery imports now point to discovery_views/ not
+//               discovery_screens/ (the old flat structure no longer exists).
+//             Fixed: /discovery/loading route removed — loading state is managed
+//               internally by ShellDiscoveryRoot via discoveryLayoutProvider.
+//             Fixed: added import for app_mobile_config.dart for isMobileAppProvider.
+//   v1.3.2 — Fixed: isMobileAppProvider is defined in app_client_config.dart,
+//               not app_mobile_config.dart. Import corrected. Both files are
+//               now imported: app_mobile_config.dart is kept because
+//               app_router.dart does not directly use AppMobileConfig or its
+//               constant — it can be removed if no other symbol from that file
+//               is needed here.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // All auth routes resolve to ShellAuthRoot with the appropriate AuthMode.
 // QAdminShell manages its own IndexedStack — GoRouter child is unused.
 // ShellRoute still provides the auth guard boundary + separate navigator key.
+//
+// Discovery routes are mobile-only: if kIsWeb is true the redirect fires and
+// sends the user to '/'. On native builds the screens render normally.
+//
+// The /discovery route is handled entirely by ShellDiscoveryRoot.
+// ShellDiscoveryRoot reads discoveryLayoutProvider and swaps between
+// TemplateDiscoveryHome and TemplateDiscoveryLoading in place.
+// /discovery/scan is a separate full-page route for the QR camera.
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../style/app_style.dart';
 import '../auth/auth_policy.dart';
+import '../config/app_client_config.dart';
 import '../../spaces/space_auth/auth_views/shell_auth_root.dart';
 import '../../spaces/space_auth/auth_views/layout_auth_config.dart';
 import '../../spaces/space_auth/auth_state/auth_riverpod.dart';
 import '../../spaces/space_admin/space_admin_shell.dart';
+import '../../spaces/space_admin/admin_portals/publisher_portal/shell_publisher_root.dart';
+import '../../spaces/space_discovery/discovery_views/shell_discovery_root.dart';
+import '../../spaces/space_discovery/discovery_views/discovery_templates/template_discovery_scan.dart';
 import '../../client/qspace/client_config.dart';
 import 'router_config.dart';
 
@@ -55,12 +81,18 @@ final routerProvider = Provider<GoRouter>((ref) {
   final routerConfig    = ref.read(routerConfigProvider);
   final refreshNotifier = _AuthChangeNotifier();
 
+  // Determine initial location based on runtime mode.
+  // Mobile native (QPages app) starts at /discovery so tenants can be selected.
+  // Web and package mode start at the configured default (usually '/').
+  final isMobile        = !kIsWeb && ref.read(isMobileAppProvider);
+  final initialLocation = isMobile ? '/discovery' : routerConfig.initialLocation;
+
   ref.listen(authSessionProvider, (_, _) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     navigatorKey:      _kRootNavKey,
-    initialLocation:   routerConfig.initialLocation,
+    initialLocation:   initialLocation,
     refreshListenable: refreshNotifier,
     redirect:          (context, state) => _redirect(ref, routerConfig, state),
     routes: [
@@ -164,6 +196,33 @@ final routerProvider = Provider<GoRouter>((ref) {
               ctx, state,
               const _AdminPlaceholder(label: 'Settings'),
             ),
+          ),
+          GoRoute(
+            path:    '/admin/publisher',
+            builder: (_, _) => const ShellPublisherRoot(),
+          ),
+        ],
+      ),
+
+      // ── Discovery routes (mobile-only) ───────────────────────────────────
+      // Redirect to '/' on web — these routes only exist for the QPages app.
+      //
+      // /discovery       → ShellDiscoveryRoot
+      //                    Manages home and loading layouts internally via
+      //                    discoveryLayoutProvider. No sub-routes for these
+      //                    states — the shell swaps templates in place.
+      //
+      // /discovery/scan  → TemplateDiscoveryScan
+      //                    Full-page QR camera. Separate route so the system
+      //                    back gesture works correctly on Android.
+      GoRoute(
+        path:     '/discovery',
+        redirect: (context, state) => kIsWeb ? '/' : null,
+        builder:  (_, _) => const ShellDiscoveryRoot(),
+        routes: [
+          GoRoute(
+            path:    'scan',
+            builder: (_, _) => const TemplateDiscoveryScan(),
           ),
         ],
       ),

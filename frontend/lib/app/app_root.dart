@@ -13,12 +13,17 @@
 //             is defined there, not re-exported via auth_riverpod.dart.
 //   v1.2.3 — Updated child: QPagesApp() → AppShell() following file rename
 //             qpages_app.dart → app_shell.dart.
+//   v1.2.4 — Added mobileConfig param (null = web/package mode).
+//             Added mobileConfigProvider override in ProviderScope.
+//             Deep-link lifecycle and initial-location resolution live in
+//             AppShell (ConsumerStatefulWidget) — see app_shell.dart v1.1.0.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config/app_client_config.dart';
+import '../core/config/app_mobile_config.dart';
 import '../core/auth/auth_adapters/firebase_auth_provider.dart';
 import '../core/auth/auth_adapters/rest_jwt_auth_provider.dart';
 // import '../core/auth/auth_adapters/social/stub_social_provider.dart';
@@ -32,11 +37,13 @@ import 'app_shell.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppRoot extends StatelessWidget {
-  final AppClientConfig config;
+  final AppClientConfig  config;
+  final AppMobileConfig? mobileConfig; // null → web/package mode
 
   const AppRoot({
     super.key,
     required this.config,
+    this.mobileConfig,               // optional — never required
   });
 
   @override
@@ -51,6 +58,7 @@ class AppRoot extends StatelessWidget {
         biometricAuthAdapterProvider.overrideWithValue(_buildBiometricAdapter()),
         tenantIdProvider.overrideWithValue(config.defaultTenantId),
         routerConfigProvider.overrideWithValue(config.router),
+        mobileConfigProvider.overrideWithValue(mobileConfig),
       ],
       child: const AppShell(),
     );

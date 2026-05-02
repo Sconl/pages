@@ -1,43 +1,35 @@
-// frontend/lib/spaces/_architect/architect_state/architect_riverpod.dart
+// frontend/lib/spaces/_architect/space_registrations/space_value_registration.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
-//   • 2026-04-27 — Import changed from architect_screen_registry to
-//                  architect_auto_registry so kArchitectSpaces resolves to the
-//                  assembled list, not a missing symbol.
-//   • 2026-04-26 — Path corrected: space_architect → _architect.
-//   • 2026-04-25 — Initial.
+//   • 2026-04-27 — Initial. Stub registration for space_value.
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Add screen imports + ArchitectScreenEntry items to the screens list as
+// space_value screens are built. The dashboard will populate automatically.
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
-// Import the assembled list, not the types-only file
-import '../architect_model/architect_auto_registry.dart';
 import '../architect_model/architect_screen_registry.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Session state
+// CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Flips true after the architect submits valid credentials.
-final architectIsLoggedInProvider = StateProvider<bool>((ref) => false);
+const _kId     = 'space_value';
+const _kLabel  = 'space_value';
+const _kIcon   = Icons.home_outlined;
+const _kAccent = Color(0xFF0F91D2);   // Digital Blue
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dashboard navigation state
+// END CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Which space is selected in the dashboard sidebar.
-/// Seeded with the first space in the assembled registry.
-final architectSelectedSpaceProvider = StateProvider<String>(
-  (ref) => kArchitectSpaces.isNotEmpty ? kArchitectSpaces.first.id : '',
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Preview state
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Active device preset in the preview portal.
-final architectPreviewDeviceProvider = StateProvider<ArchitectDevice>(
-  (ref) => ArchitectDevice.mobileM,
+final ArchitectSpace kRegisterSpaceValue = ArchitectSpace(
+  id:      _kId,
+  label:   _kLabel,
+  icon:    _kIcon,
+  accent:  _kAccent,
+  screens: const [],   // ← import screens and add entries as they are built
 );
