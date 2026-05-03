@@ -1,8 +1,14 @@
-// lib/core/style/brand_config.dart
-
+// frontend/lib/core/style/brand_config.dart
+//
 // ─────────────────────────────────────────────────────────────────────────────
-// CHANGELOG
+// CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
+//   • 2026-05-03 — Updated logo paths to reference qspace_resources package
+//                  (packages/qspace_resources/assets/logos/). Replaced WellPath
+//                  copy with QSpace Pages identity. Restored wordBold + wordLight
+//                  as explicit brand fields (QSpace / ' Pages') for use by
+//                  _BrandLogoTypographic in app_branding.dart and any widget
+//                  that needs the split wordmark without rendering an SVG asset.
 //   • Initial release — extracted from app_branding.dart CONFIG BLOCK.
 //     Now the single source of truth for all brand-specific values across
 //     the entire design system. Every other style file reads from this.
@@ -18,7 +24,7 @@
 //   • Added MotionIntensity enum — accessibility + preference level.
 //   • Added QSpaceFeatureFlags — per-suite feature toggles.
 // ─────────────────────────────────────────────────────────────────────────────
-
+//
 // WHO OWNS THIS FILE:
 //   The branding team. This is the ONLY file that should differ between brands.
 //   For a new brand on QSpace, either:
@@ -46,19 +52,15 @@ import 'package:flutter/material.dart';
 // CONFIG BLOCK — fill this in for your brand
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// This is the TEMPLATE. These values ship with WellPath as the default.
-// To brand QSpace for a new client:
-//   • Standalone compile: update the values below, nothing else.
-//   • QSpace multi-tenant: supply a client overlay.json — BrandConfig.fromManifest()
-//     creates a runtime instance without touching this file at all.
-//
 // Steps to configure a new brand from scratch:
 //   1. Set 3 color seeds (primary, secondary, tertiary)
 //   2. Set 5 font roles (hero, display, text, accent, signature)
-//   3. Drop logo SVGs into assets/logos/ and update the 3 paths
-//   4. Set identity copy (appName, tagline, domain, copyright, wordBold/Light)
-//   5. Pick canvas personality and motion intensity
-//   6. Register asset paths in pubspec.yaml under flutter: assets:
+//   3. Set the typographic wordmark split (wordBold + wordLight)
+//      This is used by _BrandLogoTypographic when no SVG logo is available.
+//   4. Add logo SVGs to the qspace_resources package (assets/logos/)
+//      and update the 3 paths below using the package:// prefix.
+//   5. Set identity copy (appName, tagline, domain, copyright)
+//   6. Pick canvas personality and motion intensity
 //   Done — everything downstream regenerates from these inputs.
 
 // ── Brand color seeds ─────────────────────────────────────────────────────────
@@ -80,46 +82,49 @@ const String _kFontText      = 'Inter';             // body, buttons, inputs (th
 const String _kFontAccent    = 'JetBrains Mono';    // numbers, stats, timestamps, badges
 const String _kFontSignature = 'Niconne';           // greetings, milestones, emotional moments
 
+// ── Typographic wordmark split ────────────────────────────────────────────────
+// Used by _BrandLogoTypographic in app_branding.dart when no SVG logo path is
+// set (e.g. during development or for tenants without uploaded assets).
+// Split the brand name at the natural weight break:
+//   wordBold  → rendered in fontHero at w700
+//   wordLight → rendered in fontHero at w300 (including any leading space)
+const String _kWordBold  = 'QSpace';
+const String _kWordLight = ' Pages';
+
 // ── Logo asset paths ──────────────────────────────────────────────────────────
-// One colored file per shape. White/black are derived at render time via
-// ColorFilter — you don't need separate mono asset files.
-// Formats: SVG preferred. PNG/WebP/JPG also work.
-// null = not yet created — BrandLogo falls back to typographic wordmark.
-const String _kLogoHorizontal = 'assets/logos/20260326_wellpath_logo_horizontal_primary_color.svg';
-const String _kLogoVertical   = 'assets/logos/20260326_wellpath_logo_vertical_primary_color.svg';
-const String _kLogoIcon       = 'assets/logos/20260326_wellpath_logo_icon_primary_color.svg';
+// Logos live in the qspace_resources package — reference via the package:// path.
+// White/black variants are derived at render time via ColorFilter in BrandLogo.
+// You do not need separate white/black asset files.
+// Source of truth for these paths: qspace_resources/lib/src/logos/logos.dart
+const String _kLogoHorizontal =
+    'packages/qspace_resources/assets/logos/20260503_qspace_pages_logo_horizontal_primary_color.svg';
+const String _kLogoVertical =
+    'packages/qspace_resources/assets/logos/20260503_qspace_pages_logo_vertical_primary_color.svg';
+const String _kLogoIcon =
+    'packages/qspace_resources/assets/logos/20260503_qspace_pages_logo_icon_primary_color.svg';
 
 // ── Supplemental asset paths (all optional) ───────────────────────────────────
 const String? _kFavicon        = null; // web/index.html — not a runtime asset
 const String? _kAppIconAndroid = null; // flutter_launcher_icons build-time only
 const String? _kAppIconIos     = null; // flutter_launcher_icons build-time only
-const String  _kOgImage        = 'assets/brand/wellpath_og_1200x630.png';
+const String  _kOgImage        = 'assets/brand/qspace_pages_og_1200x630.png';
 
 // ── Animated assets ───────────────────────────────────────────────────────────
-const String _kHeaderGifLanding =
-    'animated-gifs/20260312_asset_animated_text_wellpath_landing_page_header_v1.0.0.gif';
+const String _kHeaderGifLanding = ''; // add path when asset is created
 
 // ── Feature illustrations ─────────────────────────────────────────────────────
-const String _kIlluBookingsEmpty  = 'assets/illustrations/empty_bookings.svg';
-const String _kIlluWellnessEmpty  = 'assets/illustrations/empty_wellness.svg';
-const String _kIlluTrainersEmpty  = 'assets/illustrations/empty_trainers.svg';
+const String _kIlluBookingsEmpty   = 'assets/illustrations/empty_bookings.svg';
+const String _kIlluWellnessEmpty   = 'assets/illustrations/empty_wellness.svg';
+const String _kIlluTrainersEmpty   = 'assets/illustrations/empty_trainers.svg';
 const String _kIlluOnboardDiscover = 'assets/illustrations/onboard_discover.svg';
-const String _kIlluOnboardLog     = 'assets/illustrations/onboard_log.svg';
-const String _kIlluOnboardBook    = 'assets/illustrations/onboard_book.svg';
+const String _kIlluOnboardLog      = 'assets/illustrations/onboard_log.svg';
+const String _kIlluOnboardBook     = 'assets/illustrations/onboard_book.svg';
 
 // ── Brand identity copy ───────────────────────────────────────────────────────
-const String _kWordBold  = 'Well';
-const String _kWordLight = 'Path';
-const String _kAppName   = 'WellPath';
-const String _kTagline   = 'Your fitness journey, connected.';
-const String _kDomain    = 'wellpath-fitness.web.app';
-const String _kCopyright = '© 2026 WellPath';
-
-// ── Logo fallback colors — typographic fallback only ─────────────────────────
-// Only used when no logo asset renders. Mirrors AppColors.textPrimary/Secondary.
-// Hardcoded here to avoid circular dependency with app_theme.dart.
-const Color _kLogoBoldColor  = Color(0xFFFFFFFF);   // white
-const Color _kLogoLightColor = Color(0x8AFFFFFF);   // white 54%
+const String _kAppName   = 'QSpace Pages';
+const String _kTagline   = 'The canonical web experience engine.';
+const String _kDomain    = 'qpages.io';
+const String _kCopyright = '© 2026 QSpace Ltd';
 
 // ── Canvas & motion defaults ──────────────────────────────────────────────────
 const CanvasPersonality _kCanvasPersonality = CanvasPersonality.energetic;
@@ -181,14 +186,14 @@ class QSpaceFeatureFlags {
   final bool analyticsConsent;
 
   const QSpaceFeatureFlags({
-    this.trialSignup    = true,
-    this.pricingTable   = true,
-    this.apiDocs        = false,
-    this.blogSection    = false,
-    this.testimonials   = true,
-    this.liveChat       = false,
-    this.darkModeToggle = true,
-    this.multiLanguage  = false,
+    this.trialSignup      = true,
+    this.pricingTable     = true,
+    this.apiDocs          = false,
+    this.blogSection      = false,
+    this.testimonials     = true,
+    this.liveChat         = false,
+    this.darkModeToggle   = true,
+    this.multiLanguage    = false,
     this.analyticsConsent = true,
   });
 
@@ -229,31 +234,41 @@ class QSpaceFeatureFlags {
 
 @immutable
 class BrandConfig {
-  // Colors
+  // ── Colors ────────────────────────────────────────────────────────────────
   final Color primary;
   final Color secondary;
   final Color tertiary;
 
-  // Font roles
+  // ── Font roles ────────────────────────────────────────────────────────────
   final String fontHero;
   final String fontDisplay;
   final String fontText;
   final String fontAccent;
   final String fontSignature;
 
-  // Logo paths — nullable = not yet created, BrandLogo falls back to wordmark
+  // ── Typographic wordmark ──────────────────────────────────────────────────
+  // Used by _BrandLogoTypographic (app_branding.dart) when no SVG logo is set.
+  // wordBold renders at w700, wordLight at w300 in fontHero.
+  // For multi-tenant: the merge engine reads these from overlay.json brand.copy.
+  final String wordBold;
+  final String wordLight;
+
+  // ── Logo paths ────────────────────────────────────────────────────────────
+  // Nullable — BrandLogo widget falls back to _BrandLogoTypographic when null.
+  // For the QSpace Pages app these will always be set from kBrandDefault.
+  // For the merge engine (multi-tenant) they are supplied via overlay.json.
   final String? logoHorizontalPath;
   final String? logoVerticalPath;
   final String? logoIconPath;
 
-  // Supplemental asset paths
+  // ── Supplemental asset paths ──────────────────────────────────────────────
   final String? faviconPath;
   final String? appIconAndroidPath;
   final String? appIconIosPath;
-  final String ogImagePath;
-  final String headerGifLandingPath;
+  final String  ogImagePath;
+  final String  headerGifLandingPath;
 
-  // Feature illustrations
+  // ── Feature illustrations ─────────────────────────────────────────────────
   final String illuBookingsEmpty;
   final String illuWellnessEmpty;
   final String illuTrainersEmpty;
@@ -261,23 +276,17 @@ class BrandConfig {
   final String illuOnboardLog;
   final String illuOnboardBook;
 
-  // Identity copy
-  final String wordBold;
-  final String wordLight;
+  // ── Identity copy ─────────────────────────────────────────────────────────
   final String appName;
   final String tagline;
   final String domain;
   final String copyright;
 
-  // Logo typographic fallback colors — only matter if logo assets are missing
-  final Color logoBoldColor;
-  final Color logoLightColor;
-
-  // Canvas & motion preferences
+  // ── Canvas & motion preferences ───────────────────────────────────────────
   final CanvasPersonality canvasPersonality;
   final MotionIntensity   motionIntensity;
 
-  // QSpace feature toggles
+  // ── QSpace feature toggles ────────────────────────────────────────────────
   final QSpaceFeatureFlags features;
 
   const BrandConfig({
@@ -289,6 +298,8 @@ class BrandConfig {
     required this.fontText,
     required this.fontAccent,
     required this.fontSignature,
+    this.wordBold            = 'Brand',
+    this.wordLight           = '',
     this.logoHorizontalPath,
     this.logoVerticalPath,
     this.logoIconPath,
@@ -303,17 +314,13 @@ class BrandConfig {
     this.illuOnboardDiscover  = 'assets/illustrations/onboard_discover.svg',
     this.illuOnboardLog       = 'assets/illustrations/onboard_log.svg',
     this.illuOnboardBook      = 'assets/illustrations/onboard_book.svg',
-    required this.wordBold,
-    required this.wordLight,
     required this.appName,
     required this.tagline,
     required this.domain,
     required this.copyright,
-    this.logoBoldColor    = const Color(0xFFFFFFFF),
-    this.logoLightColor   = const Color(0x8AFFFFFF),
     this.canvasPersonality = CanvasPersonality.energetic,
     this.motionIntensity   = MotionIntensity.full,
-    this.features = const QSpaceFeatureFlags(),
+    this.features          = const QSpaceFeatureFlags(),
   });
 
   // ── QSpace merge engine entry point ────────────────────────────────────────
@@ -321,15 +328,6 @@ class BrandConfig {
   // The merge engine calls this after deepMerge(canon, suite, developer, client).
   // The resulting BrandConfig is handed to BrandScope at the MaterialApp root.
   // There is NO recompile between tenants — each tenant gets their own config.
-  //
-  // Expected keys in merged JSON:
-  //   brand.colors.primary / secondary / tertiary (hex strings)
-  //   brand.fonts.hero / display / text / accent / signature
-  //   brand.logo.horizontal / vertical / icon (asset paths or CDN URLs)
-  //   brand.copy.appName / tagline / domain / copyright / wordBold / wordLight
-  //   brand.canvas.personality (string: energetic / calm / minimal / corporate / dramatic)
-  //   brand.motion.intensity (string: none / subtle / full)
-  //   features.* (booleans)
   factory BrandConfig.fromManifest(Map<String, dynamic> manifest) {
     final brand    = (manifest['brand']    as Map<String, dynamic>?) ?? {};
     final colors   = (brand['colors']      as Map<String, dynamic>?) ?? {};
@@ -351,12 +349,13 @@ class BrandConfig {
       fontAccent:    fonts['accent']    as String? ?? _kFontAccent,
       fontSignature: fonts['signature'] as String? ?? _kFontSignature,
 
+      wordBold:  copy['wordBold']  as String? ?? _kWordBold,
+      wordLight: copy['wordLight'] as String? ?? _kWordLight,
+
       logoHorizontalPath: logo['horizontal'] as String?,
       logoVerticalPath:   logo['vertical']   as String?,
       logoIconPath:       logo['icon']       as String?,
 
-      wordBold:  copy['wordBold']  as String? ?? _kWordBold,
-      wordLight: copy['wordLight'] as String? ?? _kWordLight,
       appName:   copy['appName']   as String? ?? _kAppName,
       tagline:   copy['tagline']   as String? ?? _kTagline,
       domain:    copy['domain']    as String? ?? _kDomain,
@@ -364,7 +363,7 @@ class BrandConfig {
 
       canvasPersonality: _parsePersonality(canvas['personality'] as String?),
       motionIntensity:   _parseMotion(motion['intensity']        as String?),
-      features: QSpaceFeatureFlags.fromJson(features),
+      features:          QSpaceFeatureFlags.fromJson(features),
     );
   }
 
@@ -379,6 +378,8 @@ class BrandConfig {
     String? fontText,
     String? fontAccent,
     String? fontSignature,
+    String? wordBold,
+    String? wordLight,
     String? logoHorizontalPath,
     String? logoVerticalPath,
     String? logoIconPath,
@@ -393,16 +394,12 @@ class BrandConfig {
     String? illuOnboardDiscover,
     String? illuOnboardLog,
     String? illuOnboardBook,
-    String? wordBold,
-    String? wordLight,
     String? appName,
     String? tagline,
     String? domain,
     String? copyright,
-    Color? logoBoldColor,
-    Color? logoLightColor,
     CanvasPersonality? canvasPersonality,
-    MotionIntensity? motionIntensity,
+    MotionIntensity?   motionIntensity,
     QSpaceFeatureFlags? features,
   }) {
     return BrandConfig(
@@ -414,6 +411,8 @@ class BrandConfig {
       fontText:             fontText             ?? this.fontText,
       fontAccent:           fontAccent           ?? this.fontAccent,
       fontSignature:        fontSignature        ?? this.fontSignature,
+      wordBold:             wordBold             ?? this.wordBold,
+      wordLight:            wordLight            ?? this.wordLight,
       logoHorizontalPath:   logoHorizontalPath   ?? this.logoHorizontalPath,
       logoVerticalPath:     logoVerticalPath     ?? this.logoVerticalPath,
       logoIconPath:         logoIconPath         ?? this.logoIconPath,
@@ -428,14 +427,10 @@ class BrandConfig {
       illuOnboardDiscover:  illuOnboardDiscover  ?? this.illuOnboardDiscover,
       illuOnboardLog:       illuOnboardLog       ?? this.illuOnboardLog,
       illuOnboardBook:      illuOnboardBook      ?? this.illuOnboardBook,
-      wordBold:             wordBold             ?? this.wordBold,
-      wordLight:            wordLight            ?? this.wordLight,
       appName:              appName              ?? this.appName,
       tagline:              tagline              ?? this.tagline,
       domain:               domain               ?? this.domain,
       copyright:            copyright            ?? this.copyright,
-      logoBoldColor:        logoBoldColor        ?? this.logoBoldColor,
-      logoLightColor:       logoLightColor       ?? this.logoLightColor,
       canvasPersonality:    canvasPersonality    ?? this.canvasPersonality,
       motionIntensity:      motionIntensity      ?? this.motionIntensity,
       features:             features             ?? this.features,
@@ -446,17 +441,20 @@ class BrandConfig {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BrandConfig &&
-          primary   == other.primary   &&
-          secondary == other.secondary &&
-          tertiary  == other.tertiary  &&
-          fontText  == other.fontText  &&
-          appName   == other.appName   &&
+          primary           == other.primary           &&
+          secondary         == other.secondary         &&
+          tertiary          == other.tertiary          &&
+          fontText          == other.fontText          &&
+          wordBold          == other.wordBold          &&
+          wordLight         == other.wordLight         &&
+          appName           == other.appName           &&
           canvasPersonality == other.canvasPersonality &&
           motionIntensity   == other.motionIntensity;
 
   @override
   int get hashCode => Object.hash(
-    primary, secondary, tertiary, fontText, appName,
+    primary, secondary, tertiary, fontText,
+    wordBold, wordLight, appName,
     canvasPersonality, motionIntensity,
   );
 
@@ -492,12 +490,10 @@ class BrandConfig {
 // kBrandDefault — the static default instance
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// This is what every static AppColors.* / BrandCopy.* getter reads from.
-// For standalone use (WellPath, any single-brand app): fill in the CONFIG
-// BLOCK above and this instance is correct automatically.
-//
-// For QSpace multi-tenant: this is the fallback when no BrandScope is found
-// in the tree. The merge engine supplies the live config via BrandScope.
+// Every static AppColors.* / BrandCopy.* getter reads from this.
+// Standalone (QSpace Pages app): fill in the CONFIG BLOCK — this is correct automatically.
+// Multi-tenant (QSpace merge engine): this is the fallback when no BrandScope
+// is found in the tree. The merge engine supplies the live config via BrandScope.
 
 const BrandConfig kBrandDefault = BrandConfig(
   primary:   _kPrimary,
@@ -509,6 +505,9 @@ const BrandConfig kBrandDefault = BrandConfig(
   fontText:      _kFontText,
   fontAccent:    _kFontAccent,
   fontSignature: _kFontSignature,
+
+  wordBold:  _kWordBold,
+  wordLight: _kWordLight,
 
   logoHorizontalPath: _kLogoHorizontal,
   logoVerticalPath:   _kLogoVertical,
@@ -527,15 +526,10 @@ const BrandConfig kBrandDefault = BrandConfig(
   illuOnboardLog:      _kIlluOnboardLog,
   illuOnboardBook:     _kIlluOnboardBook,
 
-  wordBold:  _kWordBold,
-  wordLight: _kWordLight,
   appName:   _kAppName,
   tagline:   _kTagline,
   domain:    _kDomain,
   copyright: _kCopyright,
-
-  logoBoldColor:  _kLogoBoldColor,
-  logoLightColor: _kLogoLightColor,
 
   canvasPersonality: _kCanvasPersonality,
   motionIntensity:   _kMotionIntensity,
@@ -562,11 +556,10 @@ const BrandConfig kBrandDefault = BrandConfig(
 //   )
 //
 // Reading the config in a widget:
-//   final config = BrandScope.of(context);  // never returns null — falls back to kBrandDefault
+//   final config = BrandScope.of(context); // never null — falls back to kBrandDefault
 //
-// Widgets that need the live config (BrandLogo, BrandAssets) call BrandScope.of(context).
-// Color tokens come through Theme.of(context).colorScheme (proper Flutter pattern for
-// runtime themes) rather than AppColors.* statics (which read kBrandDefault).
+// Color tokens come through Theme.of(context).colorScheme in multi-tenant screens
+// rather than AppColors.* statics, which always read kBrandDefault.
 
 class BrandScope extends InheritedWidget {
   final BrandConfig config;

@@ -3,6 +3,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
+//   • 2026-05-03 — Fixed: config.logoBoldColor / config.logoLightColor removed
+//                  (never existed on BrandConfig). Replaced inline:
+//                    logoBoldColor  → config.primary
+//                    logoLightColor → config.primary.withValues(alpha: 0.55)
+//                  Fixed: BrandLogo passes config.fontHero (not config.fontText)
+//                  to _BrandLogoTypographic — the wordmark uses the hero font.
+//                  Restored: wordBold / wordLight references in BrandCopy and
+//                  _BrandLogoTypographic — fields are back in BrandConfig.
 //   • Initial release — elevated to brand foundation layer.
 //   • BrandColors / BrandCopy / BrandAssets introduced.
 //   • BrandLogo rewritten — asset-first with typographic wordmark fallback.
@@ -12,12 +20,10 @@
 //   • 5-role font system: Hero / Display / Text / Accent / Signature.
 //   • CONFIG BLOCK extracted → brand_config.dart. This file is now a pure engine.
 //     BrandColors / BrandCopy / BrandAssets read from BrandScope or kBrandDefault.
-//     Removing the config block here means a brand only edits one file: brand_config.dart.
 //   • BrandColors / BrandCopy / BrandAssets changed from abstract const to
-//     context-aware static helpers — BrandScope.of(context) provides the config,
-//     static getters fall back to kBrandDefault for non-context usage.
+//     context-aware static helpers.
 //   • Added BrandColors.fromConfig() / BrandCopy.fromConfig() convenience access.
-//   • _BrandLogoTypographic updated — reads from BrandScope at build time.
+//   • _BrandLogoTypographic updated — reads wordBold/wordLight from BrandScope.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // WHO OWNS THIS FILE:
@@ -55,6 +61,11 @@ const double _kLogoLetterSpacingMd = 1.5;
 const double _kLogoLetterSpacingLg = 3.0;
 const double _kLogoLetterSpacingXl = 4.0;
 
+// ── Typographic wordmark — light half opacity ─────────────────────────────────
+// The light portion of the wordmark renders at this opacity relative to primary.
+// Only applies to the typographic fallback — not to SVG assets.
+const double _kWordLightAlpha = 0.55;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // END CONFIG BLOCK
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +85,7 @@ enum LogoShape { icon, horizontal, vertical }
 /// Color treatment applied to the logo at render time.
 ///
 /// [colored] — render the asset as-is. No filter.
-/// [white]   — force all opaque pixels white via ColorFilter. Dark/colored backgrounds.
+/// [white]   — force all opaque pixels white via ColorFilter. Dark backgrounds.
 /// [black]   — force all opaque pixels black via ColorFilter. Light backgrounds.
 ///
 /// White/black are derived from the colored asset — no separate asset files needed.
@@ -164,6 +175,8 @@ abstract class BrandCopy {
   static String fontAccentOf   (BrandConfig c) => c.fontAccent;
   static String fontSignatureOf(BrandConfig c) => c.fontSignature;
   static String appNameOf      (BrandConfig c) => c.appName;
+  static String wordBoldOf     (BrandConfig c) => c.wordBold;
+  static String wordLightOf    (BrandConfig c) => c.wordLight;
 }
 
 
@@ -195,12 +208,12 @@ abstract class BrandAssets {
   static String get ogImage => kBrandDefault.ogImagePath;
 
   // ── Feature illustrations ─────────────────────────────────────────────────
-  static String get illuBookingsEmpty  => kBrandDefault.illuBookingsEmpty;
-  static String get illuWellnessEmpty  => kBrandDefault.illuWellnessEmpty;
-  static String get illuTrainersEmpty  => kBrandDefault.illuTrainersEmpty;
+  static String get illuBookingsEmpty   => kBrandDefault.illuBookingsEmpty;
+  static String get illuWellnessEmpty   => kBrandDefault.illuWellnessEmpty;
+  static String get illuTrainersEmpty   => kBrandDefault.illuTrainersEmpty;
   static String get illuOnboardDiscover => kBrandDefault.illuOnboardDiscover;
-  static String get illuOnboardLog     => kBrandDefault.illuOnboardLog;
-  static String get illuOnboardBook    => kBrandDefault.illuOnboardBook;
+  static String get illuOnboardLog      => kBrandDefault.illuOnboardLog;
+  static String get illuOnboardBook     => kBrandDefault.illuOnboardBook;
 
   // ── Runtime-aware access (reads from BrandScope) ─────────────────────────
   static String? logoHorizontalOf(BrandConfig c) => c.logoHorizontalPath;
@@ -270,14 +283,25 @@ abstract class BrandLogoEngine {
 //
 // Prefer BrandLogoEngine.*() over constructing this directly unless you need
 // custom fallback colors or a non-standard size.
+//
+// TYPOGRAPHIC FALLBACK COLORS:
+//   boldColor  defaults to config.primary
+//   lightColor defaults to config.primary.withValues(alpha: _kWordLightAlpha)
+//   These are not stored on BrandConfig — derived here to keep BrandConfig lean.
 
 class BrandLogo extends StatelessWidget {
-  final LogoShape  shape;
+  final LogoShape   shape;
   final LogoVariant variant;
   final double? width;
   final double? height;
   final LogoSize fallbackSize;
+
+  /// Override the bold-half color in the typographic fallback.
+  /// Defaults to config.primary if null.
   final Color? boldColor;
+
+  /// Override the light-half color in the typographic fallback.
+  /// Defaults to config.primary at _kWordLightAlpha if null.
   final Color? lightColor;
 
   const BrandLogo({
@@ -336,11 +360,15 @@ class BrandLogo extends StatelessWidget {
     final config = BrandScope.of(context);
     final path   = _assetPath(config);
 
+    // Derive fallback colors from config.primary — not stored on BrandConfig.
+    final resolvedBoldColor  = boldColor  ?? config.primary;
+    final resolvedLightColor = lightColor ?? config.primary.withValues(alpha: _kWordLightAlpha);
+
     Widget fallback() => _BrandLogoTypographic(
       size:       fallbackSize,
-      boldColor:  boldColor  ?? config.logoBoldColor,
-      lightColor: lightColor ?? config.logoLightColor,
-      fontFamily: config.fontText,
+      boldColor:  resolvedBoldColor,
+      lightColor: resolvedLightColor,
+      fontFamily: config.fontHero, // wordmark uses hero font, not body font
     );
 
     if (path == null) return fallback();
@@ -352,20 +380,20 @@ class BrandLogo extends StatelessWidget {
     if (path.toLowerCase().endsWith('.svg')) {
       return SvgPicture.asset(
         path,
-        width: w,
-        height: h,
+        width:       w,
+        height:      h,
         colorFilter: cf,
-        errorBuilder: (_, _, _) => fallback(),
+        errorBuilder: (_, __, ___) => fallback(),
       );
     }
 
     // PNG/WebP/JPG/GIF — wrap with ColorFiltered if we need tinting.
     Widget img = Image.asset(
       path,
-      width: w,
+      width:  w,
       height: h,
-      fit: BoxFit.contain,
-      errorBuilder: (_, _, _) => fallback(),
+      fit:    BoxFit.contain,
+      errorBuilder: (_, __, ___) => fallback(),
     );
 
     if (cf != null) img = ColorFiltered(colorFilter: cf, child: img);
@@ -378,20 +406,23 @@ class BrandLogo extends StatelessWidget {
 // _BrandLogoTypographic — two-weight RichText wordmark (private fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Used only when no asset renders. Takes fontFamily from BrandConfig rather
-// than importing app_theme.dart (that would be circular).
+// Used only when no asset renders. Reads wordBold / wordLight from BrandScope
+// so each tenant's split wordmark is correct in multi-tenant mode.
+//
+// fontFamily receives config.fontHero from BrandLogo — the wordmark always
+// uses the hero font (Plus Jakarta Sans for QSpace Pages), never the body font.
 
 class _BrandLogoTypographic extends StatelessWidget {
   final LogoSize size;
-  final Color? boldColor;
-  final Color? lightColor;
-  final String fontFamily;
+  final Color    boldColor;
+  final Color    lightColor;
+  final String   fontFamily;
 
   const _BrandLogoTypographic({
-    this.size       = LogoSize.md,
-    this.boldColor,
-    this.lightColor,
-    this.fontFamily = 'Poppins',
+    this.size      = LogoSize.md,
+    required this.boldColor,
+    required this.lightColor,
+    this.fontFamily = 'Plus Jakarta Sans',
   });
 
   double get _fontSize {
@@ -429,11 +460,11 @@ class _BrandLogoTypographic extends StatelessWidget {
         children: [
           TextSpan(
             text:  config.wordBold,
-            style: _style(FontWeight.w700, boldColor  ?? config.logoBoldColor),
+            style: _style(FontWeight.w700, boldColor),
           ),
           TextSpan(
             text:  config.wordLight,
-            style: _style(FontWeight.w300, lightColor ?? config.logoLightColor),
+            style: _style(FontWeight.w300, lightColor),
           ),
         ],
       ),

@@ -39,7 +39,7 @@ class SectionArchitectHeader extends StatelessWidget {
         // Badge first — context before identity
         const WidgetArchitectBadge(),
         SizedBox(height: AppSpacing.md),
-        BrandLogoEngine.verticalColored(),
+        BrandLogoEngine.horizontalColored(),
         SizedBox(height: AppSpacing.sm),
         Text(
           _kHeading,

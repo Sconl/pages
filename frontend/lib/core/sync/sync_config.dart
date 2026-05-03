@@ -3,6 +3,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG (newest first)
 // ─────────────────────────────────────────────────────────────────────────────
+//   • 2026-04-27 — Renamed registrations folder from architect_registrations
+//                  to .registration. Updated kArchitectRegistrationsPath and
+//                  the import path emitted by _writeAutoRegistry.
 //   • 2026-04-27 — Initial. ProjectStructure manifest + SyncJob base class.
 // ─────────────────────────────────────────────────────────────────────────────
 //
@@ -53,7 +56,7 @@ const String kArchitectSpacePath = 'lib/spaces/_architect';
 
 // Where registration stubs are generated
 const String kArchitectRegistrationsPath =
-    'lib/spaces/_architect/architect_registrations';
+    'lib/spaces/_architect/.registration';
 
 // The auto-registry file that gets rewritten on every sync
 const String kArchitectAutoRegistryPath =
@@ -229,7 +232,7 @@ class ArchitectRegistrationSyncJob extends SyncJob {
     final symbol   = _toExportSymbol(spaceName);
     final date     = DateTime.now().toLocal().toString().substring(0, 10);
 
-    file.writeAsStringSync('''// frontend/lib/spaces/_architect/architect_registrations/${spaceName}_registration.dart
+    file.writeAsStringSync('''// frontend/lib/spaces/_architect/.registration/${spaceName}_registration.dart
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTO-GENERATED STUB — safe to edit
@@ -276,7 +279,7 @@ final ArchitectSpace $symbol = ArchitectSpace(
   void _writeAutoRegistry(File file, List<String> fileNames) {
     final date     = DateTime.now().toLocal().toString().substring(0, 10);
     final imports  = fileNames.map((f) =>
-        "import '../architect_registrations/$f';").join('\n');
+        "import '../.registration/$f';").join('\n');  // ← updated path
     final entries  = fileNames.map((f) {
       final spaceName = f.replaceAll('.dart', '').replaceAll('_registration', '');
       return '  ${_toExportSymbol(spaceName)},';
@@ -292,14 +295,14 @@ final ArchitectSpace $symbol = ArchitectSpace(
 
 import 'architect_screen_registry.dart';
 
-$imports
+\$imports
 
 // ─────────────────────────────────────────────────────────────────────────────
 // kArchitectSpaces — assembled from all registration files
 // ─────────────────────────────────────────────────────────────────────────────
 
 final List<ArchitectSpace> kArchitectSpaces = [
-$entries
+\$entries
 ];
 ''');
   }

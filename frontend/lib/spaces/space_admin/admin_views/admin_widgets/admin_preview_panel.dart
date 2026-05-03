@@ -11,9 +11,15 @@
 //             are re-exported by app_style.dart — unnecessary_import warning).
 //             Fixed: removed unused super.key from _BrandMockPage constructor
 //             (unused_element_parameter warning — key is never passed externally).
+//   v1.2.0 — Hero section updated: renders BrandLogo SVG (horizontal, white
+//             ColorFilter) via BrandScope wrapping. Falls back to typographic
+//             wordBold + wordLight RichText when logoHorizontalPath is null.
+//             Removes direct wordBold/wordLight reference from hero — the split
+//             wordmark is now only used by _BrandLogoTypographic in app_branding.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/style/app_style.dart';
 import '../../../../core/admin/admin_brand_draft.dart';
 
@@ -28,6 +34,7 @@ const double _kMockBtnH       = 40.0;
 const double _kMockBtnR       = 20.0;
 const double _kMockSectionGap = 16.0;
 const double _kMockPad        = 20.0;
+const double _kLogoHeight     = 28.0; // logo height inside hero banner
 
 const String _kTabLive         = 'Live';
 const String _kTabDraft        = 'Draft';
@@ -282,6 +289,10 @@ class _PaneLabel extends StatelessWidget {
 //
 // super.key intentionally removed — this is a private widget instantiated only
 // twice internally (Live tab and Draft tab). Key identity is never needed.
+//
+// Logo rendering priority:
+//   1. SVG asset from config.logoHorizontalPath (via SvgPicture.asset, white ColorFilter)
+//   2. Typographic fallback: wordBold (w700) + wordLight (w300) in fontHero
 
 class _BrandMockPage extends StatelessWidget {
   final BrandConfig config;
@@ -314,21 +325,9 @@ class _BrandMockPage extends StatelessWidget {
                   mainAxisAlignment:  MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RichText(text: TextSpan(children: [
-                      TextSpan(
-                        text: config.wordBold,
-                        style: TextStyle(
-                            fontFamily: config.fontHero, fontSize: 28,
-                            fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
-                      TextSpan(
-                        text: config.wordLight,
-                        style: TextStyle(
-                            fontFamily: config.fontHero, fontSize: 28,
-                            fontWeight: FontWeight.w300, color: Colors.white70),
-                      ),
-                    ])),
-                    const SizedBox(height: 6),
+                    // Logo — SVG if path available, typographic fallback otherwise
+                    _BrandHeroLogo(config: config),
+                    const SizedBox(height: 8),
                     Text(config.tagline, style: TextStyle(
                       fontFamily: config.fontText,
                       fontSize:   12,
@@ -465,6 +464,67 @@ class _BrandMockPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _BrandHeroLogo — SVG logo with typographic fallback
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Priority:
+//   1. SvgPicture.asset from config.logoHorizontalPath — white ColorFilter
+//   2. RichText wordBold (w700) + wordLight (w300) in fontHero, white
+
+class _BrandHeroLogo extends StatelessWidget {
+  final BrandConfig config;
+  const _BrandHeroLogo({required this.config});
+
+  @override
+  Widget build(BuildContext context) {
+    final path = config.logoHorizontalPath;
+    if (path != null && path.isNotEmpty) {
+      return SvgPicture.asset(
+        path,
+        height: _kLogoHeight,
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+        // Fail silently to typographic fallback if the asset is missing
+        // (e.g. a new tenant whose assets haven't been uploaded yet).
+        placeholderBuilder: (_) => _TypographicWordmark(config: config),
+      );
+    }
+    return _TypographicWordmark(config: config);
+  }
+}
+
+class _TypographicWordmark extends StatelessWidget {
+  final BrandConfig config;
+  const _TypographicWordmark({required this.config});
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(children: [
+        TextSpan(
+          text: config.wordBold,
+          style: TextStyle(
+            fontFamily:  config.fontHero,
+            fontSize:    24,
+            fontWeight:  FontWeight.w700,
+            color:       Colors.white,
+          ),
+        ),
+        TextSpan(
+          text: config.wordLight,
+          style: TextStyle(
+            fontFamily:  config.fontHero,
+            fontSize:    24,
+            fontWeight:  FontWeight.w300,
+            color:       Colors.white70,
+          ),
+        ),
+      ]),
     );
   }
 }
