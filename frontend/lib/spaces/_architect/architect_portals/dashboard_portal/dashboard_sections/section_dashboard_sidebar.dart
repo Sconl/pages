@@ -30,8 +30,8 @@ import '../../../architect_model/architect_screen_registry.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Copy ───────────────────────────────────────────────────────────────────────
-const String _kTitle         = 'Architect';
-const String _kSubtitle      = 'Dev System';
+// const String _kTitle         = 'Architect';
+// const String _kSubtitle      = 'Dev System';
 const String _kLogoutTooltip = 'Exit architect space';
 const String _kCollapseLabel = 'Collapse';
 const String _kExpandLabel   = 'Expand';
