@@ -1,0 +1,91 @@
+// .vscode/tasks.json
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGELOG (newest first)
+// ─────────────────────────────────────────────────────────────────────────────
+//   • 2026-04-27 — Fixed problemMatcher. The previous pattern was missing the
+//                  required `file` capture group, causing VS Code schema
+//                  validation to reject it on every workspace open.
+//                  Solution: "problemMatcher": [] — the correct VS Code
+//                  idiom for a background task that produces no compiler
+//                  errors. VS Code starts the task and marks it as running
+//                  without attempting to parse the output as diagnostics.
+//   • 2026-04-27 — Initial. Added QSpace Sync Watcher with runOn: folderOpen.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// TASKS IN THIS FILE:
+//
+//   1. QSpace Sync Watcher (auto-starts on folder open)
+//      Runs sync_watcher.dart in the background. Monitors lib/spaces/ for new
+//      space_* folders and regenerates architect_auto_registry.dart
+//      automatically. No manual dart run needed during development.
+//
+//   2. QSpace Sync (Run Once)
+//      One-shot manual sync. Use after pulling changes or as a pre-build step.
+//      Also wired to the flutter build task as a dependsOn.
+//
+// USAGE:
+//   Auto-start:  Tasks run on folderOpen automatically.
+//   Manual run:  Ctrl+Shift+P → "Tasks: Run Task" → pick from the list.
+//   Stop watcher: Ctrl+Shift+P → "Tasks: Terminate Task" → QSpace Sync Watcher
+//
+{
+  "version": "2.0.0",
+  "tasks": [
+
+    // ── 1. Continuous watcher — auto-starts when VS Code opens the workspace ──
+    {
+      "label": "QSpace Sync Watcher",
+      "type": "shell",
+      // Run from the project root — sync_watcher reads Directory.current.path
+      // which must be frontend/ so all relative paths resolve correctly.
+      "command": "cd frontend && dart run lib/core/sync/sync_watcher.dart",
+      "isBackground": true,
+      "runOptions": {
+        // Launches silently every time VS Code opens this workspace.
+        // To disable: change "folderOpen" to "default" or remove this block.
+        "runOn": "folderOpen"
+      },
+      // Empty array = "this task produces no compiler diagnostics to match."
+      // This is the correct VS Code idiom for log-only background processes.
+      // Using a pattern object here requires both `file` and `message` capture
+      // groups — since our output has neither, the empty array is correct.
+      "problemMatcher": [],
+      "presentation": {
+        // Keep the terminal panel out of the way — it's a background service
+        "reveal": "silent",
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+
+    // ── 2. One-shot sync — manual trigger or CI pre-build step ───────────────
+    {
+      "label": "QSpace Sync (Run Once)",
+      "type": "shell",
+      "command": "cd frontend && dart run lib/core/sync/sync_runner.dart",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+
+    // ── 3. Flutter run (dev) — depends on sync so the registry is fresh ──────
+    {
+      "label": "Flutter Run (web)",
+      "type": "shell",
+      "command": "cd frontend && flutter run -d chrome",
+      "dependsOn": ["QSpace Sync (Run Once)"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+
+  ]
+}
