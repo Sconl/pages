@@ -29,7 +29,7 @@ import '../core/auth/auth_adapters/rest_jwt_auth_provider.dart';
 // import '../core/auth/auth_adapters/social/stub_social_provider.dart';
 // import '../core/auth/auth_adapters/biometric/stub_biometric_provider.dart';
 import '../core/router/router_config.dart';
-import '../spaces/space_auth/auth_state/auth_riverpod.dart';
+import '../canon/spaces/space_auth/auth_state/auth_riverpod.dart';
 import 'app_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

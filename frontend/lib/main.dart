@@ -21,7 +21,7 @@ import 'package:flutter/material.dart';
 import 'client/qspace/client_config.dart';
 import 'core/config/app_client_config.dart';
 import 'app/app_root.dart';
-import 'spaces/_architect/architect_root.dart';
+import 'canon/spaces/_architect/architect_root.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG — change values here, not inline

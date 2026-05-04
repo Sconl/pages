@@ -22,11 +22,11 @@
 //   Done — shell, nav, IndexedStack, config access all update automatically.
 
 import 'package:flutter/material.dart';
-import '../../spaces/space_admin/admin_portals/dashboard_portal/shell_dashboard_root.dart';
-import '../../spaces/space_admin/admin_portals/brand_portal/shell_brand_root.dart';
-import '../../spaces/space_admin/admin_portals/features_portal/shell_features_root.dart';
-import '../../spaces/space_admin/admin_portals/settings_portal/shell_settings_root.dart';
-import '../../spaces/space_admin/admin_portals/publisher_portal/shell_publisher_root.dart';
+import '../../canon/spaces/space_admin/admin_portals/dashboard_portal/shell_dashboard_root.dart';
+import '../../canon/spaces/space_admin/admin_portals/brand_portal/shell_brand_root.dart';
+import '../../canon/spaces/space_admin/admin_portals/features_portal/shell_features_root.dart';
+import '../../canon/spaces/space_admin/admin_portals/settings_portal/shell_settings_root.dart';
+import '../../canon/spaces/space_admin/admin_portals/publisher_portal/shell_publisher_root.dart';
 // Add portal shells as they're built:
 // import '../../spaces/space_admin/admin_portals/content_portal/shell_content_root.dart';
 // import '../../spaces/space_admin/admin_portals/assets_portal/shell_assets_root.dart';
