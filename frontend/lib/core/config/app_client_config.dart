@@ -3,14 +3,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHANGELOG
 // ─────────────────────────────────────────────────────────────────────────────
+//   v1.2.0 — Added localOverlayAssetPath to AppClientConfig.
+//             When set, the merge engine loads overlay.json from Flutter assets
+//             instead of a CDN/API — enables Developer Package mode as a
+//             first-class deployment option. Null = SaaS / Enterprise mode.
+//   v1.1.0 — Added mobileConfigProvider and isMobileAppProvider.
+//             Null mobileConfig = web/package mode; non-null = QPages mobile app.
+//             Both providers are overridden in AppRoot's ProviderScope.
 //   v1.0.0 — Initial. AppClientConfig — the master config class.
 //             Centralizes every subsystem config in one object.
 //             AppRoot takes exactly one AppClientConfig and derives everything.
 //             To configure QSpace Pages for any project: define one instance
 //             of this class in your client_config.dart and pass it to AppRoot.
-//   v1.1.0 — Added mobileConfigProvider and isMobileAppProvider.
-//             Null mobileConfig = web/package mode; non-null = QPages mobile app.
-//             Both providers are overridden in AppRoot's ProviderScope.
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // PHILOSOPHY:
@@ -68,14 +72,22 @@ class AppClientConfig {
   final SocialAuthPort    socialAdapter;
   final BiometricAuthPort biometricAdapter;
 
+  // ── Developer Package mode ────────────────────────────────────────────────
+  // When set, the merge engine loads overlay.json from Flutter assets at this
+  // path instead of fetching from a CDN or API. Keeps package-mode projects
+  // fully self-contained — no network dependency, no credentials needed.
+  // Leave null for SaaS and Enterprise deployments.
+  final String? localOverlayAssetPath;
+
   AppClientConfig({
     required this.adapterType,
     required this.apiBaseUrl,
     required this.defaultTenantId,
     required this.auth,
-    this.social          = const QSocialAuthConfig(),
-    this.biometric       = const QBiometricConfig(),
-    this.router          = const QRouterConfig(),
+    this.social                = const QSocialAuthConfig(),
+    this.biometric             = const QBiometricConfig(),
+    this.router                = const QRouterConfig(),
+    this.localOverlayAssetPath,
     SocialAuthPort?    socialAdapter,
     BiometricAuthPort? biometricAdapter,
   })  : socialAdapter    = socialAdapter    ?? const StubSocialProvider(),
